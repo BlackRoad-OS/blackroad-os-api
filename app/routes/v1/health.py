@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict
 
 from fastapi import APIRouter, Depends
@@ -14,7 +14,7 @@ router = APIRouter()
 async def health(settings: Settings = Depends(get_settings)) -> Dict[str, Any]:
     return {
         "status": "ok",
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "environment": settings.env,
         "upstreams": {
             "coreConfigured": settings.core_configured,
