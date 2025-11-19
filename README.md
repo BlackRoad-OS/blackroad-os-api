@@ -65,13 +65,13 @@ app/
 | Variable | Required | Description |
 | --- | --- | --- |
 | `NODE_ENV` | No (default `development`) | Deployment environment label. |
-| `PUBLIC_API_URL` | Yes | External URL for this gateway. |
-| `CORE_API_URL` | Yes | Upstream Core backend base URL. |
+| `PUBLIC_API_URL` | Yes (non-dev) | External URL for this gateway. |
+| `CORE_API_URL` | Yes (non-dev) | Upstream Core backend base URL. |
 | `AGENTS_API_URL` | No | Upstream Agents API base URL. |
-| `API_KEYS` | Yes | Comma-separated list of API keys authorized for `/v1` routes. |
-| `RATE_LIMIT_WINDOW` | No | Optional rate limit window (seconds). |
-| `RATE_LIMIT_MAX` | No | Optional rate limit max requests per window. |
-| `GIT_COMMIT` | No | Commit SHA used for `/version`. |
+| `API_KEYS` | Yes (non-dev) | Comma-separated list of API keys authorized for `/v1` routes. |
+| `LOG_LEVEL` | No | Application log level (default `info`). |
+| `REQUEST_TIMEOUT_MS` | No | Default upstream request timeout in milliseconds (default `10000`). |
+| `GIT_COMMIT` / `RAILWAY_GIT_COMMIT_SHA` | No | Commit SHA used for `/version`. |
 | `BUILD_TIME` | No | Build timestamp used for `/version`. |
 
 ## Railway deployment

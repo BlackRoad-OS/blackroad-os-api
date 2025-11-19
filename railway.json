@@ -14,7 +14,7 @@
     "CORE_API_URL",
     "AGENTS_API_URL",
     "API_KEYS",
-    "RATE_LIMIT_WINDOW",
-    "RATE_LIMIT_MAX"
+    "LOG_LEVEL",
+    "REQUEST_TIMEOUT_MS"
   ]
 }

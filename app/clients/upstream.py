@@ -17,7 +17,7 @@ class UpstreamClient:
         name (str): The name of the upstream service.
         base_url (Optional[str]): The base URL of the upstream service.
     """
-    def __init__(self, name: str, base_url: Optional[str]):
+    def __init__(self, name: str, base_url: Optional[str], default_timeout: float = DEFAULT_TIMEOUT):
         """
         Initialize an UpstreamClient.
 
@@ -27,6 +27,7 @@ class UpstreamClient:
         """
         self.name = name
         self.base_url = base_url.rstrip("/") if base_url else None
+        self.default_timeout = default_timeout
 
     async def request(self, method: str, path: str, **kwargs) -> Dict[str, Any]:
         """
@@ -51,7 +52,7 @@ class UpstreamClient:
             raise UpstreamError(source=self.name, message=f"{self.name} upstream not configured", status_code=502)
 
         url = f"{self.base_url}/{path.lstrip('/')}"
-        timeout = kwargs.pop("timeout", DEFAULT_TIMEOUT)
+        timeout = kwargs.pop("timeout", self.default_timeout)
 
         try:
             async with httpx.AsyncClient(timeout=timeout) as client:
@@ -75,11 +76,3 @@ class UpstreamClient:
             )
         except httpx.HTTPError as exc:
             raise UpstreamError(self.name, message=f"{self.name} upstream request failed", details={"path": path}) from exc
-
-
-def get_core_client(core_api_url: Optional[str]) -> UpstreamClient:
-    return UpstreamClient("core", core_api_url)
-
-
-def get_agents_client(agents_api_url: Optional[str]) -> UpstreamClient:
-    return UpstreamClient("agents", agents_api_url)
