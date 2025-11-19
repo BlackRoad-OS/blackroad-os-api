@@ -7,6 +7,6 @@ from app.config import Settings
 def build_agents_client(settings: Settings) -> UpstreamClient:
     return UpstreamClient(
         "agents",
-        settings.agents_api_url,
+        str(settings.agents_api_url) if settings.agents_api_url else None,
         default_timeout=settings.request_timeout_seconds,
     )
