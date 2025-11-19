@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import secrets
 from typing import List, Optional
 
 from fastapi import Depends, Header, HTTPException, status
@@ -23,7 +24,7 @@ def api_key_auth(
     if not provided_key and authorization and authorization.startswith("Bearer "):
         provided_key = authorization.split(" ", 1)[1]
 
-    if provided_key in api_keys:
+    if provided_key and any(secrets.compare_digest(provided_key, key) for key in api_keys):
         return True
 
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
