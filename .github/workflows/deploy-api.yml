@@ -33,6 +33,7 @@ jobs:
       - name: Deploy to Railway
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          GIT_COMMIT: ${{ github.sha }}
         run: |
           railway login --token "$RAILWAY_TOKEN"
           railway up --service public-api --project blackroad-core --environment "$RAILWAY_ENVIRONMENT" --detached
