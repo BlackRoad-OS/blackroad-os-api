@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import Request
+from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
 from starlette import status
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -17,6 +17,17 @@ class ErrorHandlerMiddleware(BaseHTTPMiddleware):
                 code="UPSTREAM_ERROR",
                 message=exc.detail,
                 details={"source": exc.source, **exc.details},
+                request_id=getattr(request.state, "request_id", None),
+            )
+            return JSONResponse(status_code=exc.status_code, content=payload)
+        except HTTPException as exc:
+            detail = exc.detail if isinstance(exc.detail, dict) else None
+            code = detail.get("code") if detail is not None else "BAD_REQUEST"
+            message = detail.get("message") if detail is not None else str(exc.detail)
+            payload = build_error_response(
+                code=code or "BAD_REQUEST",
+                message=message or "Request error",
+                details=detail.get("details") if detail is not None else None,
                 request_id=getattr(request.state, "request_id", None),
             )
             return JSONResponse(status_code=exc.status_code, content=payload)

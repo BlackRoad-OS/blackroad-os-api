@@ -17,7 +17,10 @@ def api_key_auth(
     api_keys: List[str] = Depends(get_api_keys),
 ):
     if not api_keys:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="API key required")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"code": "UNAUTHORIZED", "message": "Invalid or missing API key."},
+        )
 
     provided_key = x_api_key
     if not provided_key and authorization and authorization.startswith("Bearer "):
@@ -26,4 +29,7 @@ def api_key_auth(
     if provided_key in api_keys:
         return True
 
-    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail={"code": "UNAUTHORIZED", "message": "Invalid or missing API key."},
+    )

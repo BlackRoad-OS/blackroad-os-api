@@ -6,7 +6,13 @@ from fastapi import HTTPException
 
 
 class UpstreamError(HTTPException):
-    def __init__(self, source: str, status_code: int = 502, message: str = "Upstream service error", details: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        source: str,
+        status_code: int = 502,
+        message: str = "Upstream service error",
+        details: Optional[Dict[str, Any]] = None,
+    ):
         self.source = source
         self.details = details or {}
         super().__init__(status_code=status_code, detail=message)
