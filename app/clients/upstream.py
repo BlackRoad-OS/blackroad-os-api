@@ -59,7 +59,11 @@ class UpstreamClient:
             response.raise_for_status()
             if response.headers.get("content-type", "").startswith("application/json"):
                 return response.json()
-            return {"status_code": response.status_code, "content": response.text}
+            return {
+                "status_code": response.status_code,
+                "content": response.text,
+                "content_type": response.headers.get("content-type", ""),
+            }
         except httpx.TimeoutException as exc:
             raise UpstreamError(self.name, message=f"{self.name} upstream timeout", details={"path": path}) from exc
         except httpx.HTTPStatusError as exc:
