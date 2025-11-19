@@ -68,7 +68,7 @@ class UpstreamClient:
                 status_code=exc.response.status_code,
                 message=f"{self.name} upstream returned {exc.response.status_code}",
                 details={"path": path},
-            ) from exc
+            )
         except httpx.HTTPError as exc:
             raise UpstreamError(self.name, message=f"{self.name} upstream request failed", details={"path": path}) from exc
 
