@@ -1,0 +1,20 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "name": "public-api",
+  "project": "blackroad-core",
+  "service": {
+    "name": "public-api",
+    "envVar": "PORT",
+    "startCommand": "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}",
+    "buildCommand": "pip install -r requirements.txt"
+  },
+  "variables": [
+    "NODE_ENV",
+    "PUBLIC_API_URL",
+    "CORE_API_URL",
+    "AGENTS_API_URL",
+    "API_KEYS",
+    "RATE_LIMIT_WINDOW",
+    "RATE_LIMIT_MAX"
+  ]
+}
