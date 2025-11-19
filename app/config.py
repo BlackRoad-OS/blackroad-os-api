@@ -17,9 +17,6 @@ class Settings(BaseSettings):
     agents_api_url: Optional[AnyHttpUrl] = Field(None, alias="AGENTS_API_URL")
 
     api_keys: List[str] = Field(default_factory=list, alias="API_KEYS")
-    rate_limit_window: Optional[int] = Field(None, alias="RATE_LIMIT_WINDOW")
-    rate_limit_max: Optional[int] = Field(None, alias="RATE_LIMIT_MAX")
-
     app_version: str = "0.1.0"
     build_time: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
     commit: Optional[str] = Field(None, alias="GIT_COMMIT")
