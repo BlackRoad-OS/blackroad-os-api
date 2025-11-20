@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     agents_api_url: Optional[AnyHttpUrl] = Field(None, alias="AGENTS_API_URL")
 
     api_keys: List[str] = Field(default_factory=list, alias="API_KEYS")
+    public_api_key: Optional[str] = Field(None, alias="PUBLIC_API_KEY")
     app_version: str = Field("0.1.0", alias="APP_VERSION")
     build_time: str = Field(
         default_factory=lambda: datetime.utcnow().isoformat(), alias="BUILD_TIME"
@@ -55,8 +56,8 @@ class Settings(BaseSettings):
                 missing.append("PUBLIC_API_URL")
             if not values.core_api_url:
                 missing.append("CORE_API_URL")
-            if not values.api_keys:
-                missing.append("API_KEYS")
+            if not (values.api_keys or values.public_api_key):
+                missing.append("API_KEYS or PUBLIC_API_KEY")
             if missing:
                 raise ValueError(
                     f"Missing required environment variables: {', '.join(missing)}"
@@ -74,6 +75,15 @@ class Settings(BaseSettings):
     @property
     def request_timeout_seconds(self) -> float:
         return max(self.request_timeout_ms, 0) / 1000
+
+    @property
+    def allowed_api_keys(self) -> List[str]:
+        keys: List[str] = []
+        keys.extend(self.api_keys)
+        if self.public_api_key:
+            keys.append(self.public_api_key)
+        # remove empties while preserving order
+        return [key for key in keys if key]
 
 
 @lru_cache()

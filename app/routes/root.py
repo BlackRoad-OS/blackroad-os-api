@@ -10,13 +10,17 @@ from app.config import Settings, get_settings
 router = APIRouter()
 
 
-@router.get("/health", summary="Gateway health check")
-async def health(settings: Settings = Depends(get_settings)) -> Dict[str, Any]:
+def build_health_payload(settings: Settings) -> Dict[str, Any]:
     return {
         "status": "ok",
         "timestamp": datetime.utcnow().isoformat(),
         "environment": settings.env,
     }
+
+
+@router.get("/health", summary="Gateway health check")
+async def health(settings: Settings = Depends(get_settings)) -> Dict[str, Any]:
+    return build_health_payload(settings)
 
 
 @router.get("/version", summary="Gateway version info")
