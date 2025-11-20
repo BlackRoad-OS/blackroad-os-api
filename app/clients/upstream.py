@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Mapping, Optional
 
 import httpx
 
@@ -72,7 +72,52 @@ class UpstreamClient:
                 self.name,
                 status_code=exc.response.status_code,
                 message=f"{self.name} upstream returned {exc.response.status_code}",
-                details={"path": path},
+                details={"path": path, "body": exc.response.text},
             )
         except httpx.HTTPError as exc:
-            raise UpstreamError(self.name, message=f"{self.name} upstream request failed", details={"path": path}) from exc
+            raise UpstreamError(
+                self.name, message=f"{self.name} upstream request failed", details={"path": path}
+            ) from exc
+
+    async def proxy_request(
+        self,
+        method: str,
+        path: str,
+        *,
+        params: Optional[Mapping[str, Any]] = None,
+        headers: Optional[Mapping[str, str]] = None,
+        content: Optional[bytes] = None,
+        json: Optional[Any] = None,
+        timeout: Optional[float] = None,
+    ) -> httpx.Response:
+        if not self.base_url:
+            raise UpstreamError(source=self.name, message=f"{self.name} upstream not configured", status_code=502)
+
+        url = f"{self.base_url}/{path.lstrip('/')}"
+        timeout_value = timeout or self.default_timeout
+
+        try:
+            async with httpx.AsyncClient(timeout=timeout_value) as client:
+                response = await client.request(
+                    method,
+                    url,
+                    params=params,
+                    headers=headers,
+                    content=content,
+                    json=json,
+                )
+            response.raise_for_status()
+            return response
+        except httpx.TimeoutException as exc:
+            raise UpstreamError(self.name, message=f"{self.name} upstream timeout", details={"path": path}) from exc
+        except httpx.HTTPStatusError as exc:
+            raise UpstreamError(
+                self.name,
+                status_code=exc.response.status_code,
+                message=f"{self.name} upstream returned {exc.response.status_code}",
+                details={"path": path, "body": exc.response.text},
+            )
+        except httpx.HTTPError as exc:
+            raise UpstreamError(
+                self.name, message=f"{self.name} upstream request failed", details={"path": path}
+            ) from exc

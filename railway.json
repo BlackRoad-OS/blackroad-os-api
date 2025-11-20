@@ -6,7 +6,8 @@
     "name": "public-api",
     "envVar": "PORT",
     "startCommand": "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}",
-    "buildCommand": "pip install -r requirements.txt"
+    "buildCommand": "pip install -r requirements.txt",
+    "healthcheckPath": "/health"
   },
   "variables": [
     "NODE_ENV",
@@ -14,6 +15,7 @@
     "CORE_API_URL",
     "AGENTS_API_URL",
     "API_KEYS",
+    "PUBLIC_API_KEY",
     "LOG_LEVEL",
     "REQUEST_TIMEOUT_MS"
   ]

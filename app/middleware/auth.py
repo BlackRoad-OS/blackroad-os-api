@@ -8,7 +8,7 @@ from app.config import get_settings
 
 
 def get_api_keys() -> List[str]:
-    return get_settings().api_keys
+    return get_settings().allowed_api_keys
 
 
 def api_key_auth(
