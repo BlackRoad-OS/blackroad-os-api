@@ -2,19 +2,22 @@ import express from "express";
 import { env } from "./config/env";
 import { createProxyRouter } from "./routes/proxy";
 import { serviceClients } from "./lib/httpClient";
+import healthRouter from "./routes/health";
+import infoRouter from "./routes/info";
+import versionRouter from "./routes/version";
+import pingRouter from "./routes/v1/ping";
 
 const app = express();
 
 app.use(express.json({ limit: "5mb" }));
 
-app.get("/health", (_req, res) => {
-  res.json({ status: "ok" });
-});
+// API routes
+app.use(healthRouter);
+app.use(infoRouter);
+app.use(versionRouter);
+app.use("/v1", pingRouter);
 
-app.get("/version", (_req, res) => {
-  res.json({ version: env.SERVICE_VERSION });
-});
-
+// Proxy routes
 app.use("/core", createProxyRouter(serviceClients.core));
 app.use("/agents", createProxyRouter(serviceClients.agents));
 app.use("/operator", createProxyRouter(serviceClients.operator));
