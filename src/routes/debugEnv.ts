@@ -15,7 +15,6 @@ router.get("/debug/env", (req: Request, res: Response) => {
     env: {
       NODE_ENV: process.env.NODE_ENV,
       OS_ROOT,
-      LOG_LEVEL: process.env.LOG_LEVEL,
       CORE_BASE_URL,
       OPERATOR_BASE_URL,
     },
