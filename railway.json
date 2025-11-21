@@ -1,22 +1,10 @@
 {
-  "$schema": "https://railway.app/railway.schema.json",
-  "name": "public-api",
-  "project": "blackroad-core",
+  "build": "npm install && npm run build",
+  "start": "npm start",
   "service": {
-    "name": "public-api",
-    "envVar": "PORT",
-    "startCommand": "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}",
-    "buildCommand": "pip install -r requirements.txt",
-    "healthcheckPath": "/health"
-  },
-  "variables": [
-    "NODE_ENV",
-    "PUBLIC_API_URL",
-    "CORE_API_URL",
-    "AGENTS_API_URL",
-    "API_KEYS",
-    "PUBLIC_API_KEY",
-    "LOG_LEVEL",
-    "REQUEST_TIMEOUT_MS"
-  ]
+    "port": 8080,
+    "healthcheck": {
+      "path": "/health"
+    }
+  }
 }

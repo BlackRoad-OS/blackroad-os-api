@@ -1,86 +1,61 @@
-# BlackRoad OS — Public API Gateway
+# BlackRoad OS – Public API
 
-FastAPI-powered public gateway that fronts Core and Agents services with versioned routing, thin proxying, and API key enforcement.
+Public API gateway for the BlackRoad Operating System. This service exposes common health/info endpoints and versioned API routes that coordinate with core BlackRoad services.
 
-## What it does
+## Endpoints
 
-- Exposes `/health` and `/version` for liveness and build metadata.
-- Adds `/v1` routes with API key authentication and consistent error wrapping.
-- Proxies requests to upstreams:
-  - `/v1/core/*` → `CORE_API_URL`
-  - `/v1/agents/*` → `AGENTS_API_URL`
-
-## Configuration
-
-Environment variables are loaded through `app.config.Settings`.
-
-| Variable | Required | Description |
-| --- | --- | --- |
-| `NODE_ENV` | No (default `development`) | Deployment environment label. |
-| `PUBLIC_API_URL` | Yes (non-dev) | External URL for this gateway. |
-| `CORE_API_URL` | Yes (non-dev) | Upstream Core backend base URL. |
-| `AGENTS_API_URL` | No | Upstream Agents API base URL. |
-| `API_KEYS` | Yes (non-dev) | Comma-separated list of API keys authorized for `/v1` routes. |
-| `PUBLIC_API_KEY` | Optional | Single API key value if not using `API_KEYS`. |
-| `LOG_LEVEL` | No | Application log level (default `info`). |
-| `REQUEST_TIMEOUT_MS` | No | Upstream request timeout in milliseconds (default `10000`). |
-| `GIT_COMMIT` / `RAILWAY_GIT_COMMIT_SHA` | No | Commit SHA used for `/version`. |
-| `BUILD_TIME` | No | Build timestamp used for `/version`. |
+- `GET /health` – Liveness check
+- `GET /info` – Service metadata
+- `GET /version` – Version info
+- `GET /debug/env` – Safe subset of environment values
+- `GET /v1/ping` – Example API endpoint
 
 ## Running locally
 
 1. Install dependencies:
 
    ```bash
-   pip install -r requirements.txt
+   npm install
    ```
 
-2. Export a sample API key (either `API_KEYS` or `PUBLIC_API_KEY` works):
+2. Start the development server:
 
    ```bash
-   export PUBLIC_API_KEY=local-dev-key
-   export CORE_API_URL=http://localhost:9000  # point to your Core service
-   export AGENTS_API_URL=http://localhost:9100  # optional
+   npm run dev
    ```
 
-3. Start the gateway:
+   The API listens on `http://localhost:8080` by default.
 
-   ```bash
-   uvicorn app.main:app --reload --port 8000
-   ```
-
-## Example requests
-
-Health and version (no API key required):
+## Build and start
 
 ```bash
-curl http://localhost:8000/health
-curl http://localhost:8000/version
-curl http://localhost:8000/v1/health
+npm run build
+npm start
 ```
 
-Proxying upstreams (API key required):
+## Environment variables
+
+See `.env.example` for defaults. Key values:
+
+- `OS_ROOT` – Base URL for the BlackRoad OS
+- `SERVICE_BASE_URL` – External URL for this public API
+- `CORE_BASE_URL` – Core service base URL
+- `OPERATOR_BASE_URL` – Operator service base URL
+- `LOG_LEVEL` – Logging verbosity
+- `PORT` – Port to bind (default `8080`)
+
+## Tests
+
+Run the test suite with:
 
 ```bash
-# Ping Core
-curl -H "x-api-key: local-dev-key" http://localhost:8000/v1/core/ping
-
-# Forward any Core path
-curl -X POST \
-  -H "x-api-key: local-dev-key" \
-  -H "Content-Type: application/json" \
-  -d '{"hello": "world"}' \
-  "http://localhost:8000/v1/core/some/path"
-
-# Forward any Agents path
-curl -H "x-api-key: local-dev-key" "http://localhost:8000/v1/agents/demo"
+npm test
 ```
 
-## Deployment
+## Deployment (Railway)
 
-- **Railway project**: `blackroad-core`
-- **Service name**: `public-api`
-- **Build**: `pip install -r requirements.txt`
-- **Start**: `uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}`
+Railway uses `railway.json`:
 
-GitHub Actions workflow `.github/workflows/api-deploy.yaml` deploys to Railway on `dev`, `staging`, and `main` branches and runs health checks against `/health` and `/v1/health` after each deploy.
+- Build: `npm install && npm run build`
+- Start: `npm start`
+- Healthcheck: `/health` on port `8080`
