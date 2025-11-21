@@ -13,6 +13,7 @@ Public API gateway for the BlackRoad Operating System. This service fronts the p
 - `GET /info` – Service metadata including base URL, OS root, and version.
 - `GET /version` – Service id and version from `package.json`.
 - `GET /debug/env` – Safe subset of environment configuration.
+- `GET /v1/health` – Versioned health check endpoint.
 - `GET /v1/ping` – Versioned ping endpoint for API consumers.
 
 ## Getting Started
@@ -45,11 +46,20 @@ See `.env.example` for defaults:
 - `PORT` – Port to bind (default `8080`)
 
 ## Railway Deployment
-`railway.json` is configured for deployment:
+The repository is configured for Railway deployment using the modern 2024 format:
+
+**Configuration Files:**
+- `railway.json` - Railway deployment configuration with schema validation
+- `nixpacks.toml` - Explicit build configuration for Node.js 20
+
+**Deployment Settings:**
+- Builder: Nixpacks
 - Build: `npm install && npm run build`
 - Start: `npm start`
-- Port: `8080`
-- Healthcheck: `/health`
+- Healthcheck: `/health` (timeout: 100s)
+- Restart Policy: Always
+
+The service will automatically deploy to Railway when changes are pushed to the configured branches (dev, staging, main).
 
 ## Testing
 Run the test suite with:
