@@ -13,6 +13,7 @@ router = APIRouter()
 def build_health_payload(settings: Settings) -> Dict[str, Any]:
     return {
         "status": "ok",
+        "service": "api",
         "timestamp": datetime.utcnow().isoformat(),
         "environment": settings.env,
     }
