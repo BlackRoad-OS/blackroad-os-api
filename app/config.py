@@ -49,6 +49,7 @@ class Settings(BaseSettings):
         return value
 
     @model_validator(mode="after")
+    @classmethod
     def validate_required(cls, values: "Settings") -> "Settings":
         if values.env.lower() != "development":
             missing = []
