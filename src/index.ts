@@ -6,6 +6,7 @@ import healthRouter from "./routes/health";
 import infoRouter from "./routes/info";
 import versionRouter from "./routes/version";
 import pingRouter from "./routes/v1/ping";
+import v1HealthRouter from "./routes/v1/health";
 
 const app = express();
 
@@ -16,6 +17,7 @@ app.use(healthRouter);
 app.use(infoRouter);
 app.use(versionRouter);
 app.use("/v1", pingRouter);
+app.use("/v1", v1HealthRouter);
 
 // Proxy routes
 app.use("/core", createProxyRouter(serviceClients.core));
