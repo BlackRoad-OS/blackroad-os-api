@@ -1,38 +1,32 @@
 import express from "express";
-import cors from "cors";
-import healthRouter from "./routes/health";
-import infoRouter from "./routes/info";
-import versionRouter from "./routes/version";
-import debugEnvRouter from "./routes/debugEnv";
-import v1PingRouter from "./routes/v1/ping";
-import { loggingMiddleware } from "./middleware/logging";
-import { errorHandler } from "./middleware/errorHandler";
-import { SERVICE_ID } from "./config/serviceConfig";
+import { env } from "./config/env";
+import { createProxyRouter } from "./routes/proxy";
+import { serviceClients } from "./lib/httpClient";
 
 const app = express();
 
-app.use(cors());
-app.use(express.json());
-app.use(loggingMiddleware);
+app.use(express.json({ limit: "5mb" }));
 
-app.use(healthRouter);
-app.use(infoRouter);
-app.use(versionRouter);
-app.use(debugEnvRouter);
-app.use("/v1", v1PingRouter);
+app.get("/health", (_req, res) => {
+  res.json({ status: "ok" });
+});
 
-app.use(errorHandler);
+app.get("/version", (_req, res) => {
+  res.json({ version: env.SERVICE_VERSION });
+});
 
-const PORT = process.env.PORT ? Number(process.env.PORT) : 8080;
+app.use("/core", createProxyRouter(serviceClients.core));
+app.use("/agents", createProxyRouter(serviceClients.agents));
+app.use("/operator", createProxyRouter(serviceClients.operator));
+
+app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error(err);
+  res.status(502).json({ error: "Upstream request failed" });
+});
 
 if (process.env.NODE_ENV !== "test") {
-  app.listen(PORT, () => {
-    console.log(
-      JSON.stringify({
-        ts: new Date().toISOString(),
-        message: `Service ${SERVICE_ID} listening on port ${PORT}`,
-      })
-    );
+  app.listen(env.PORT, () => {
+    console.log(`Gateway listening on port ${env.PORT}`);
   });
 }
 
