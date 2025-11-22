@@ -4,10 +4,9 @@ import { SERVICE_ID } from "../../config/serviceConfig";
 const router = Router();
 
 router.get("/health", (req: Request, res: Response) => {
-  res.json({
-    ok: true,
+  res.status(200).json({
+    status: "ok",
     service: SERVICE_ID,
-    ts: new Date().toISOString(),
   });
 });
 

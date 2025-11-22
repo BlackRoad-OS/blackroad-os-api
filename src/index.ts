@@ -30,8 +30,8 @@ app.use((err: Error, _req: express.Request, res: express.Response, _next: expres
 });
 
 if (process.env.NODE_ENV !== "test") {
-  app.listen(env.PORT, () => {
-    console.log(`Gateway listening on port ${env.PORT}`);
+  app.listen(env.PORT, env.HOST, () => {
+    console.log(`Gateway listening on ${env.HOST}:${env.PORT}`);
   });
 }
 

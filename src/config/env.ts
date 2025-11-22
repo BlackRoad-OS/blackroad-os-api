@@ -9,6 +9,7 @@ const parsePort = (value: string | undefined, fallback: number): number => {
 
 export const env = {
   PORT: parsePort(process.env.PORT, 8080),
+  HOST: process.env.HOST || "0.0.0.0",
   CORE_BASE_URL: process.env.CORE_BASE_URL || "http://localhost:3001",
   AGENTS_BASE_URL: process.env.AGENTS_BASE_URL || "http://localhost:3002",
   OPERATOR_BASE_URL: process.env.OPERATOR_BASE_URL || "http://localhost:3003",
