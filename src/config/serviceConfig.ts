@@ -6,6 +6,8 @@ export const OS_ROOT = process.env.OS_ROOT || "https://blackroad.systems";
 
 export const CORE_BASE_URL =
   process.env.CORE_BASE_URL || "https://core.blackroad.systems";
+export const CORE_VERIFICATION_BASE_URL =
+  process.env.CORE_VERIFICATION_BASE_URL || `${CORE_BASE_URL}/internal`;
 export const OPERATOR_BASE_URL =
   process.env.OPERATOR_BASE_URL || "https://operator.blackroad.systems";
 
@@ -15,5 +17,6 @@ export const serviceConfig = {
   SERVICE_BASE_URL,
   OS_ROOT,
   CORE_BASE_URL,
+  CORE_VERIFICATION_BASE_URL,
   OPERATOR_BASE_URL,
 };

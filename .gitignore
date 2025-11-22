@@ -211,3 +211,7 @@ node_modules/
 dist/
 coverage/
 npm-debug.log*
+
+# Allow TypeScript library utilities under src/lib
+!src/lib/
+!src/lib/**

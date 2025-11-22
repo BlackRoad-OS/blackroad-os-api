@@ -7,10 +7,14 @@ const parsePort = (value: string | undefined, fallback: number): number => {
   return Number.isFinite(parsed) ? parsed : fallback;
 };
 
+const defaultCoreBaseUrl = process.env.CORE_BASE_URL || "http://localhost:3001";
+
 export const env = {
   PORT: parsePort(process.env.PORT, 8080),
   HOST: process.env.HOST || "0.0.0.0",
-  CORE_BASE_URL: process.env.CORE_BASE_URL || "http://localhost:3001",
+  CORE_BASE_URL: defaultCoreBaseUrl,
+  CORE_VERIFICATION_BASE_URL:
+    process.env.CORE_VERIFICATION_BASE_URL || `${defaultCoreBaseUrl}/internal`,
   AGENTS_BASE_URL: process.env.AGENTS_BASE_URL || "http://localhost:3002",
   OPERATOR_BASE_URL: process.env.OPERATOR_BASE_URL || "http://localhost:3003",
   SERVICE_VERSION:
