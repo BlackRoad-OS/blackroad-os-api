@@ -1,12 +1,14 @@
 import request from "supertest";
-import app from "../src/index";
+import { createServer } from "../src/server";
 
-describe("GET /api/health", () => {
-  it("returns ok status and service id", async () => {
-    const response = await request(app).get("/api/health");
+const app = createServer();
 
-    expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty("status", "ok");
-    expect(response.body).toHaveProperty("service", "blackroad-os-api");
+describe("GET /health", () => {
+  it("returns ok with uptime and env", async () => {
+    const res = await request(app).get("/health").expect(200);
+
+    expect(res.body.status).toBe("ok");
+    expect(typeof res.body.uptimeSeconds).toBe("number");
+    expect(res.body.env).toBeDefined();
   });
 });

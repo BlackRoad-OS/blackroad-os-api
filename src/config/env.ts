@@ -1,22 +1,53 @@
+/**
+ * Centralized API configuration loader.
+ *
+ * Values are sourced from environment variables and provide typed access for the
+ * HTTP server. The operator base URL points to the blackroad-os-operator
+ * service, which powers the finance agents.
+ */
 import dotenv from "dotenv";
 
 dotenv.config();
 
-const parsePort = (value: string | undefined, fallback: number): number => {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
-};
+export interface ApiConfig {
+  /**
+   * Deployment environment indicator (dev, staging, prod, test).
+   */
+  env: "dev" | "staging" | "prod" | "test";
+  /**
+   * TCP port the HTTP server should bind to.
+   */
+  port: number;
+  /**
+   * Log verbosity for request/response logging.
+   */
+  logLevel: "debug" | "info" | "warn" | "error";
+  /**
+   * Base URL for the blackroad-os-operator service that provides finance data.
+   */
+  operatorBaseUrl: string;
+  /**
+   * Timeout in milliseconds for outbound requests to upstream services.
+   */
+  requestTimeoutMs: number;
+}
 
-const defaultCoreBaseUrl = process.env.CORE_BASE_URL || "http://localhost:3001";
+/**
+ * Load and normalize API configuration from environment variables.
+ */
+export function getApiConfig(): ApiConfig {
+  const env = (process.env.NODE_ENV as ApiConfig["env"]) || "dev";
+  const port = Number.parseInt(process.env.PORT || "3001", 10);
+  const logLevel =
+    (process.env.LOG_LEVEL as ApiConfig["logLevel"]) || process.env.LOGLEVEL || "info";
+  const operatorBaseUrl = process.env.OPERATOR_BASE_URL || "http://localhost:4000";
+  const requestTimeoutMs = Number.parseInt(process.env.REQUEST_TIMEOUT_MS || "5000", 10);
 
-export const env = {
-  PORT: parsePort(process.env.PORT, 8080),
-  HOST: process.env.HOST || "0.0.0.0",
-  CORE_BASE_URL: defaultCoreBaseUrl,
-  CORE_VERIFICATION_BASE_URL:
-    process.env.CORE_VERIFICATION_BASE_URL || `${defaultCoreBaseUrl}/internal`,
-  AGENTS_BASE_URL: process.env.AGENTS_BASE_URL || "http://localhost:3002",
-  OPERATOR_BASE_URL: process.env.OPERATOR_BASE_URL || "http://localhost:3003",
-  SERVICE_VERSION:
-    process.env.SERVICE_VERSION || process.env.npm_package_version || "dev",
-};
+  return {
+    env,
+    port: Number.isFinite(port) ? port : 3001,
+    logLevel,
+    operatorBaseUrl,
+    requestTimeoutMs: Number.isFinite(requestTimeoutMs) ? requestTimeoutMs : 5000,
+  };
+}

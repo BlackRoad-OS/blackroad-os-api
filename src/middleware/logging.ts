@@ -1,28 +1,24 @@
-import { Request, Response, NextFunction } from "express";
-import { SERVICE_ID } from "../config/serviceConfig";
+import { randomUUID } from "crypto";
+import { NextFunction, Request, Response } from "express";
+import { getApiConfig } from "../config/env";
 
-export const loggingMiddleware = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void => {
-  const start = process.hrtime.bigint();
+/**
+ * Basic request logger that also ensures every request has a request ID.
+ * A structured logger can replace the console usage in the future.
+ */
+export function loggingMiddleware(req: Request, res: Response, next: NextFunction) {
+  const start = Date.now();
+  const cfg = getApiConfig();
+  const requestId = req.headers["x-request-id"] || randomUUID();
+
+  (req as any).requestId = requestId;
+  res.setHeader("x-request-id", String(requestId));
 
   res.on("finish", () => {
-    const end = process.hrtime.bigint();
-    const durationMs = Number(end - start) / 1_000_000;
-
-    const logEntry = {
-      ts: new Date().toISOString(),
-      method: req.method,
-      path: req.originalUrl || req.url,
-      status: res.statusCode,
-      duration_ms: Number(durationMs.toFixed(3)),
-      service_id: SERVICE_ID,
-    };
-
-    console.log(JSON.stringify(logEntry));
+    const duration = Date.now() - start;
+    const message = `${req.method} ${req.originalUrl} ${res.statusCode} - ${duration}ms`;
+    console.log(`[${requestId}] ${cfg.logLevel.toUpperCase()} ${message}`);
   });
 
   next();
-};
+}

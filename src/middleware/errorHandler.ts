@@ -1,22 +1,28 @@
-import { Request, Response, NextFunction } from "express";
-import { SERVICE_ID } from "../config/serviceConfig";
+import { NextFunction, Request, Response } from "express";
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const errorHandler = (
-  err: Error,
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void => {
-  const status = res.statusCode >= 400 ? res.statusCode : 500;
+export interface ApiError extends Error {
+  statusCode?: number;
+  details?: unknown;
+}
 
-  if (process.env.NODE_ENV !== "test") {
-    console.error(err);
-  }
+/**
+ * Express error handler that ensures consistent JSON error responses.
+ */
+export function errorHandler(err: ApiError, req: Request, res: Response, _next: NextFunction) {
+  const statusCode = err.statusCode || 500;
+  const requestId = (req as any).requestId;
+  // TODO: formalize error code taxonomy and mapping from upstream services.
 
-  res.status(status).json({
-    ok: false,
-    error: err.message || "Internal Server Error",
-    service: SERVICE_ID,
-  });
-};
+  const payload = {
+    error: {
+      message: statusCode === 500 ? "Internal server error" : err.message,
+      statusCode,
+      requestId,
+      details: statusCode === 500 ? undefined : err.details,
+    },
+  };
+
+  console.error(`[${requestId || "unknown"}]`, err);
+
+  res.status(statusCode).json(payload);
+}

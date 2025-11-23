@@ -1,14 +1,27 @@
-import { Router, Request, Response } from "express";
+import { Router } from "express";
 import packageInfo from "../../package.json";
-import { SERVICE_ID } from "../config/serviceConfig";
+import { getApiConfig } from "../config/env";
 
-const router = Router();
+export function createVersionRouter(): Router {
+  const router = Router();
 
-router.get("/version", (req: Request, res: Response) => {
-  res.json({
-    version: packageInfo.version,
-    service: SERVICE_ID,
+  router.get("/", (_req, res) => {
+    const cfg = getApiConfig();
+    const payload: Record<string, unknown> = {
+      version: packageInfo.version,
+      env: cfg.env,
+    };
+
+    if (process.env.GIT_SHA) {
+      payload.gitSha = process.env.GIT_SHA;
+    }
+
+    if (process.env.BUILD_TIME) {
+      payload.buildTime = process.env.BUILD_TIME;
+    }
+
+    res.json(payload);
   });
-});
 
-export default router;
+  return router;
+}

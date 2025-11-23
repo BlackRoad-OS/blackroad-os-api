@@ -1,9 +1,17 @@
 import { Router } from "express";
+import { getApiConfig } from "../config/env";
 
-const api = Router();
+export function createHealthRouter(): Router {
+  const router = Router();
 
-api.get("/api/health", (_req, res) => {
-  res.status(200).json({ status: "ok", service: "blackroad-os-api" });
-});
+  router.get("/", (_req, res) => {
+    const cfg = getApiConfig();
+    res.json({
+      status: "ok",
+      uptimeSeconds: Math.round(process.uptime()),
+      env: cfg.env,
+    });
+  });
 
-export default api;
+  return router;
+}

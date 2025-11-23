@@ -1,33 +1,16 @@
-import express from "express";
-import { createProxyRouter } from "./routes/proxy";
-import { serviceClients } from "./lib/httpClient";
-import health from "./routes/health";
-import infoRouter from "./routes/info";
-import versionRouter from "./routes/version";
-import pingRouter from "./routes/v1/ping";
-import v1HealthRouter from "./routes/v1/health";
-import verificationRouter from "./routes/v1/verify";
+import { createServer } from "./server";
+import { getApiConfig } from "./config/env";
 
-const app = express();
+async function main() {
+  const cfg = getApiConfig();
+  const app = createServer();
 
-app.use(express.json({ limit: "5mb" }));
+  app.listen(cfg.port, "0.0.0.0", () => {
+    console.log(`blackroad-os-api listening on port ${cfg.port} (${cfg.env})`);
+  });
+}
 
-// API routes
-app.use(health);
-app.use(infoRouter);
-app.use(versionRouter);
-app.use("/v1", pingRouter);
-app.use("/v1", v1HealthRouter);
-app.use("/v1", verificationRouter);
-
-// Proxy routes
-app.use("/core", createProxyRouter(serviceClients.core));
-app.use("/agents", createProxyRouter(serviceClients.agents));
-app.use("/operator", createProxyRouter(serviceClients.operator));
-
-app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  console.error(err);
-  res.status(502).json({ error: "Upstream request failed" });
+main().catch((err) => {
+  console.error("Fatal error starting API:", err);
+  process.exit(1);
 });
-
-export default app;
