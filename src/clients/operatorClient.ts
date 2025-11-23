@@ -1,5 +1,6 @@
 import { getConfig } from "../config";
 import { Agent, ServiceHealth } from "../types/api";
+import { CashForecast, FinanceSummary } from "../types/finance";
 
 const MOCK_AGENTS: Agent[] = [
   {
@@ -45,6 +46,12 @@ export async function fetchAgents(): Promise<Agent[]> {
   void OPERATOR_API_BASE_URL;
   return MOCK_AGENTS;
 }
+
+export interface OperatorClient {
+  getFinanceSummary(): Promise<FinanceSummary>;
+  getCashForecast(): Promise<CashForecast>;
+}
+
 /**
  * HTTP client for talking to blackroad-os-operator.
  * TODO: wire to real operator endpoints when available.
@@ -53,10 +60,10 @@ export class HttpOperatorClient implements OperatorClient {
   private readonly baseUrl: string;
   private readonly timeoutMs: number;
 
-  constructor() {
-    const cfg = getApiConfig();
-    this.baseUrl = cfg.operatorBaseUrl;
-    this.timeoutMs = cfg.requestTimeoutMs;
+  constructor(timeoutMs = 5000) {
+    const cfg = getConfig();
+    this.baseUrl = cfg.OPERATOR_API_BASE_URL;
+    this.timeoutMs = timeoutMs;
   }
 
   private async get<T>(path: string): Promise<T> {
@@ -104,6 +111,7 @@ export class HttpOperatorClient implements OperatorClient {
   async getCashForecast(): Promise<CashForecast> {
     return this.get<CashForecast>("/internal/finance/cash-forecast");
   }
+}
 
 export async function fetchAgentById(id: string): Promise<Agent | null> {
   const agents = await fetchAgents();
