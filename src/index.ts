@@ -1,8 +1,7 @@
 import express from "express";
-import { env } from "./config/env";
 import { createProxyRouter } from "./routes/proxy";
 import { serviceClients } from "./lib/httpClient";
-import healthRouter from "./routes/health";
+import health from "./routes/health";
 import infoRouter from "./routes/info";
 import versionRouter from "./routes/version";
 import pingRouter from "./routes/v1/ping";
@@ -14,7 +13,7 @@ const app = express();
 app.use(express.json({ limit: "5mb" }));
 
 // API routes
-app.use(healthRouter);
+app.use(health);
 app.use(infoRouter);
 app.use(versionRouter);
 app.use("/v1", pingRouter);
@@ -30,11 +29,5 @@ app.use((err: Error, _req: express.Request, res: express.Response, _next: expres
   console.error(err);
   res.status(502).json({ error: "Upstream request failed" });
 });
-
-if (process.env.NODE_ENV !== "test") {
-  app.listen(env.PORT, env.HOST, () => {
-    console.log(`Gateway listening on ${env.HOST}:${env.PORT}`);
-  });
-}
 
 export default app;

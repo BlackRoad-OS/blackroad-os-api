@@ -1,13 +1,9 @@
-import { Router, Request, Response } from "express";
-import { SERVICE_ID } from "../config/serviceConfig";
+import { Router } from "express";
 
-const router = Router();
+const api = Router();
 
-router.get("/health", (req: Request, res: Response) => {
-  res.status(200).json({
-    status: "ok",
-    service: SERVICE_ID,
-  });
+api.get("/api/health", (_req, res) => {
+  res.status(200).json({ status: "ok", service: "blackroad-os-api" });
 });
 
-export default router;
+export default api;
