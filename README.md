@@ -1,11 +1,17 @@
 # BlackRoad OS – Public API
 
-Public API gateway for the BlackRoad Operating System. This service exposes health/version endpoints for monitoring and proxies finance data from the Automated Finance Layer in **blackroad-os-operator**.
+`blackroad-os-api` is the typed HTTP surface for BlackRoad OS. It exposes versioned JSON endpoints that Prism Console and other clients use to query health, agents, finance, events, and RoadChain data. This service participates in the shared **"BlackRoad OS - Master Orchestration"** project alongside Operator, Core, Prism, Web, and Infra.
 
-## Features
-- **Health & Version** endpoints for observability.
-- **Finance** endpoints for summaries, cash forecasts, and financial statements.
-- Structured, testable Express setup with centralized middleware.
+## Core Endpoints
+All routes are prefixed with `/api/v1` and return the standard `{ ok, data | error }` envelope.
+
+- `GET /api/v1/health` – API + dependency health summary
+- `GET /api/v1/system/overview` – Aggregated system status and recent metrics
+- `GET /api/v1/agents` – List agents with optional `status` and `q` filters
+- `GET /api/v1/agents/:id` – Agent detail
+- `GET /api/v1/finance/snapshot` – Finance/treasury snapshot
+- `GET /api/v1/events` – Recent journal-style events with optional filters
+- `GET /api/v1/roadchain/blocks` – RoadChain block headers (mocked for now)
 
 ## Getting Started
 1. Install dependencies:
@@ -16,42 +22,34 @@ Public API gateway for the BlackRoad Operating System. This service exposes heal
    ```bash
    npm run dev
    ```
-3. Build for production:
+3. Build and start production bundle:
    ```bash
-   npm run build
-   ```
-4. Start the compiled server:
-   ```bash
-   npm start
+   npm run build && npm start
    ```
 
-The server listens on `http://localhost:3001` by default or the configured `PORT`.
+The server listens on `http://localhost:4000` by default or the configured `PORT`.
 
 ## Configuration
-Set the following environment variables as needed:
-- `PORT` – Port to bind (default `3001`)
-- `LOG_LEVEL` – Logging verbosity (default `info`)
-- `OPERATOR_BASE_URL` – Base URL for `blackroad-os-operator`
-- `REQUEST_TIMEOUT_MS` – Timeout for upstream requests (default `5000`)
+Environment is centralized in `src/config.ts` via `getConfig()`.
 
-## Example Requests
-```bash
-curl http://localhost:3001/health
-curl http://localhost:3001/finance/summary
-curl http://localhost:3001/finance/statements/2025-Q1
-```
+- `NODE_ENV` – `development` | `test` | `production` (default: `development`)
+- `PORT` – HTTP port (default: `4000`)
+- `OPERATOR_API_BASE_URL` – Base URL for `blackroad-os-operator` (required in production, default: `http://localhost:4100`)
+- `ROADCHAIN_BASE_URL` – Optional base for a future RoadChain backend
+- `LOG_LEVEL` – Log verbosity (default: `info`)
+
+## Development Notes
+- The API is a thin adapter: it shapes responses, validates inputs, and delegates business logic to `blackroad-os-operator` and `blackroad-os-core` when available.
+- RoadChain and some finance data are mocked for now; TODO markers indicate where to swap in real upstream calls.
+- Responses always follow the `{ ok: boolean; data?; error? }` envelope to keep Prism and other clients stable.
 
 ## Testing
-Run the test suite with:
 ```bash
 npm test
 ```
 
-## Docs
-- [API overview](docs/api-overview.md)
-- [OpenAPI spec](docs/openapi.yaml)
-
-## TODO
-- Add authentication and authorization.
-- Add rate limiting and abuse protection.
-- Improve structured logging and metrics.
+## Related Repos
+- `blackroad-os-operator` – Agent runner and orchestration
+- `blackroad-os-core` – Domain primitives and journaling
+- `blackroad-os-prism-console` – Operator UI consuming this API
+- `blackroad-os-web` – Public web presence

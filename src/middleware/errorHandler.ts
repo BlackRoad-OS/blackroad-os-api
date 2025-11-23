@@ -1,28 +1,33 @@
 import { NextFunction, Request, Response } from "express";
+import { getConfig } from "../config";
 
-export interface ApiError extends Error {
+export interface ApiRouteError extends Error {
   statusCode?: number;
+  code?: string;
   details?: unknown;
 }
 
-/**
- * Express error handler that ensures consistent JSON error responses.
- */
-export function errorHandler(err: ApiError, req: Request, res: Response, _next: NextFunction) {
+export function errorHandler(
+  err: ApiRouteError,
+  req: Request,
+  res: Response,
+  _next: NextFunction
+) {
+  const { NODE_ENV } = getConfig();
   const statusCode = err.statusCode || 500;
+  const code = err.code || (statusCode >= 500 ? "INTERNAL_SERVER_ERROR" : "BAD_REQUEST");
   const requestId = (req as any).requestId;
-  // TODO: formalize error code taxonomy and mapping from upstream services.
 
-  const payload = {
+  if (statusCode >= 500) {
+    console.error(`[${requestId || "unknown"}]`, err);
+  }
+
+  res.status(statusCode).json({
+    ok: false,
     error: {
-      message: statusCode === 500 ? "Internal server error" : err.message,
-      statusCode,
-      requestId,
-      details: statusCode === 500 ? undefined : err.details,
+      code,
+      message: statusCode >= 500 ? "Internal server error" : err.message,
+      details: NODE_ENV === "development" || NODE_ENV === "test" ? err.details ?? err.stack : undefined,
     },
-  };
-
-  console.error(`[${requestId || "unknown"}]`, err);
-
-  res.status(statusCode).json(payload);
+  });
 }

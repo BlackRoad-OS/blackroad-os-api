@@ -1,20 +1,27 @@
-import express from "express";
 import cors from "cors";
-import { loggingMiddleware } from "./middleware/logging";
+import express from "express";
 import { errorHandler } from "./middleware/errorHandler";
-import { registerRoutes } from "./routes";
+import { requestLogger } from "./middleware/requestLogger";
+import { createV1Router } from "./routes";
 
-export function createServer() {
+export function createApp() {
   const app = express();
   app.use(cors());
   app.use(express.json());
-  app.use(loggingMiddleware);
-  // TODO: add rate limiting/abuse protection middleware when requirements are defined.
+  app.use(requestLogger);
 
-  registerRoutes(app);
+  app.use("/api/v1", createV1Router());
 
-  // TODO: add auth middleware when authN/authZ requirements are defined.
-  // TODO: emit metrics/traces once observability stack is available.
+  app.use((req, res) => {
+    res.status(404).json({
+      ok: false,
+      error: {
+        code: "NOT_FOUND",
+        message: `Route not found: ${req.method} ${req.originalUrl}`,
+      },
+    });
+  });
+
   app.use(errorHandler);
 
   return app;

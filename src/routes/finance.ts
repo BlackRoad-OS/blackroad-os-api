@@ -1,46 +1,28 @@
 import { Router } from "express";
-import { HttpOperatorClient, OperatorClient } from "../clients/operatorClient";
-import { ApiError } from "../middleware/errorHandler";
+import { ApiResponse, FinanceSnapshot } from "../types/api";
 
-const PERIOD_REGEX = /^(\d{4}-(0[1-9]|1[0-2])|\d{4}-Q[1-4])$/;
+function buildMockFinanceSnapshot(): FinanceSnapshot {
+  const now = new Date().toISOString();
+  return {
+    timestamp: now,
+    monthlyInfraCostUsd: 4200,
+    monthlyRevenueUsd: 12500,
+    estimatedSavingsUsd: 3100,
+    walletBalanceUsd: 88000,
+    notes: "Mock finance snapshot. Wire to real treasury metrics in operator/core.",
+  };
+}
 
-export function createFinanceRouter(operatorClient: OperatorClient = new HttpOperatorClient()): Router {
+export function createFinanceRouter() {
   const router = Router();
 
-  router.get("/summary", async (_req, res, next) => {
-    try {
-      const summary = await operatorClient.getFinanceSummary();
-      res.json({ data: summary });
-    } catch (err) {
-      next(err);
-    }
-  });
+  router.get("/snapshot", (_req, res) => {
+    const response: ApiResponse<FinanceSnapshot> = {
+      ok: true,
+      data: buildMockFinanceSnapshot(),
+    };
 
-  router.get("/cash-forecast", async (_req, res, next) => {
-    try {
-      const forecast = await operatorClient.getCashForecast();
-      res.json({ data: forecast });
-    } catch (err) {
-      next(err);
-    }
-  });
-
-  router.get("/statements/:period", async (req, res, next) => {
-    try {
-      const { period } = req.params;
-      if (!PERIOD_REGEX.test(period)) {
-        const error: ApiError = new Error(
-          "Invalid period format. Use YYYY-MM or YYYY-Q{1-4}."
-        );
-        error.statusCode = 400;
-        throw error;
-      }
-
-      const statements = await operatorClient.getStatements(period);
-      res.json({ data: statements });
-    } catch (err) {
-      next(err);
-    }
+    res.json(response);
   });
 
   return router;

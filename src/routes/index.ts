@@ -1,10 +1,20 @@
-import { Express } from "express";
+import { Router } from "express";
+import { createAgentsRouter } from "./agents";
+import { createEventsRouter } from "./events";
 import { createFinanceRouter } from "./finance";
 import { createHealthRouter } from "./health";
-import { createVersionRouter } from "./version";
+import { createRoadchainRouter } from "./roadchain";
+import { createSystemRouter } from "./system";
 
-export function registerRoutes(app: Express) {
-  app.use("/health", createHealthRouter());
-  app.use("/version", createVersionRouter());
-  app.use("/finance", createFinanceRouter());
+export function createV1Router() {
+  const router = Router();
+
+  router.use("/health", createHealthRouter());
+  router.use("/system", createSystemRouter());
+  router.use("/agents", createAgentsRouter());
+  router.use("/finance", createFinanceRouter());
+  router.use("/events", createEventsRouter());
+  router.use("/roadchain", createRoadchainRouter());
+
+  return router;
 }

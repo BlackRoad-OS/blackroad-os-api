@@ -1,28 +1,27 @@
 # BlackRoad OS API Overview
 
-The **blackroad-os-api** service is the public API gateway for the BlackRoad Operating System. It exposes lightweight monitoring endpoints and forwards finance-focused read APIs from the finance agents that live in **blackroad-os-operator**.
+`blackroad-os-api` is the versioned HTTP gateway for the BlackRoad Operating System. It shapes responses, enforces contracts, and forwards calls to internal services like `blackroad-os-operator` and future RoadChain storage.
 
 ## Responsibilities
-- Provide health and version endpoints for infrastructure monitoring.
-- Surface finance insights (summary, cash forecasts, financial statements) produced by the operator's finance agents.
-- Act as the forward-compatible entry point for additional agent/task/compliance APIs.
+- Provide typed, stable JSON endpoints for Prism Console and other clients.
+- Normalize responses into a consistent `{ ok, data | error }` envelope.
+- Delegate business logic to Operator/Core while handling validation and error contracts at the edge.
 
-## Architecture
-- **HTTP Server:** Express with centralized middleware for logging and error handling.
-- **Operator Client:** `HttpOperatorClient` bridges outbound requests to `blackroad-os-operator` using the configured `OPERATOR_BASE_URL`.
-- **Types:** Finance contracts live in `src/types/finance.ts` and mirror GAAP-inspired outputs from the finance agents.
+## Endpoints (v1)
+- `GET /api/v1/health` – API + dependency health summary.
+- `GET /api/v1/system/overview` – Aggregated status and recent metrics used by the Prism dashboard.
+- `GET /api/v1/agents` – List agents with optional `status` and `q` search filters.
+- `GET /api/v1/agents/:id` – Agent detail or `AGENT_NOT_FOUND` on 404.
+- `GET /api/v1/finance/snapshot` – Treasury/finance snapshot (mocked until Operator wiring is live).
+- `GET /api/v1/events` – Recent journal-style events with optional `severity`, `source`, and `limit` filters.
+- `GET /api/v1/roadchain/blocks` – RoadChain block headers (mock data until journal backend is exposed).
 
-## Authentication & Security
-Authentication and authorization are not yet wired. Add API key or JWT validation middleware once requirements are defined. TODOs are in the codebase for rate limiting and structured observability.
+## Consumers
+- **Prism Console** – Dashboard, Agents, Finance, and Events views call these endpoints.
+- **Operator/Core** – Act as upstream data sources for health, agents, and finance metrics.
+- **Web/Public surfaces** – May use a narrowed subset later.
 
-## Running Locally
-1. Install dependencies: `npm install`
-2. Start dev server: `npm run dev`
-3. Call endpoints:
-   - `GET /health`
-   - `GET /version`
-   - `GET /finance/summary`
-   - `GET /finance/cash-forecast`
-   - `GET /finance/statements/{period}` (e.g., `2025-Q1`)
-
-Finance endpoints are read-only views into the operator; any mutations belong in upstream agent services.
+## Notes
+- Environment configuration is centralized in `src/config.ts` (`PORT`, `NODE_ENV`, `OPERATOR_API_BASE_URL`, `ROADCHAIN_BASE_URL`, `LOG_LEVEL`).
+- Mock data is clearly marked with TODOs to be replaced by real upstream calls.
+- Authentication/rate limiting are intentionally deferred until requirements are defined.

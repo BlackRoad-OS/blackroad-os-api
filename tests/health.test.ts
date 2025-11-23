@@ -1,14 +1,14 @@
 import request from "supertest";
-import { createServer } from "../src/server";
+import { createApp } from "../src/server";
 
-const app = createServer();
+const app = createApp();
 
-describe("GET /health", () => {
-  it("returns ok with uptime and env", async () => {
-    const res = await request(app).get("/health").expect(200);
+describe("GET /api/v1/health", () => {
+  it("returns ok with overall status and services", async () => {
+    const res = await request(app).get("/api/v1/health").expect(200);
 
-    expect(res.body.status).toBe("ok");
-    expect(typeof res.body.uptimeSeconds).toBe("number");
-    expect(res.body.env).toBeDefined();
+    expect(res.body.ok).toBe(true);
+    expect(res.body.data.overallStatus).toBeDefined();
+    expect(Array.isArray(res.body.data.services)).toBe(true);
   });
 });
