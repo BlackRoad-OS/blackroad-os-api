@@ -1,6 +1,6 @@
 import { getConfig } from "../config";
 import { Agent, ServiceHealth } from "../types/api";
-import { CashForecast, FinanceSummary } from "../types/finance";
+import { CashForecast, CashForecastBucket, FinanceSummary } from "../types/finance";
 
 const MOCK_AGENTS: Agent[] = [
   {
@@ -33,6 +33,37 @@ const MOCK_HEALTH: ServiceHealth[] = [
   },
 ];
 
+const MOCK_FINANCE_SUMMARY: FinanceSummary = {
+  currency: "USD",
+  cashBalance: 88000,
+  monthlyBurnRate: 4200,
+  runwayMonths: 18,
+  mrr: 12500,
+  arr: 150000,
+  generatedAt: new Date().toISOString(),
+};
+
+const MOCK_CASH_FORECAST_BUCKETS: CashForecastBucket[] = [
+  {
+    startDate: new Date().toISOString(),
+    endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    netChange: -4200,
+    endingBalance: 83800,
+  },
+  {
+    startDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+    netChange: 12500,
+    endingBalance: 96300,
+  },
+  {
+    startDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+    endDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString(),
+    netChange: -3200,
+    endingBalance: 93100,
+  },
+];
+
 export async function fetchOperatorHealth(): Promise<ServiceHealth[]> {
   const { OPERATOR_API_BASE_URL } = getConfig();
   // TODO: Replace mock with real HTTP call to `${OPERATOR_API_BASE_URL}/health`.
@@ -45,6 +76,24 @@ export async function fetchAgents(): Promise<Agent[]> {
   // TODO: Replace mock with real HTTP call to `${OPERATOR_API_BASE_URL}/agents`.
   void OPERATOR_API_BASE_URL;
   return MOCK_AGENTS;
+}
+
+export async function fetchFinanceSummary(): Promise<FinanceSummary> {
+  const { OPERATOR_API_BASE_URL } = getConfig();
+  // TODO: Replace mock with real HTTP call to `${OPERATOR_API_BASE_URL}/internal/finance/summary`.
+  void OPERATOR_API_BASE_URL;
+  return MOCK_FINANCE_SUMMARY;
+}
+
+export async function fetchCashForecast(): Promise<CashForecast> {
+  const { OPERATOR_API_BASE_URL } = getConfig();
+  // TODO: Replace mock with real HTTP call to `${OPERATOR_API_BASE_URL}/internal/finance/cash-forecast`.
+  void OPERATOR_API_BASE_URL;
+  return {
+    currency: "USD",
+    buckets: MOCK_CASH_FORECAST_BUCKETS,
+    generatedAt: new Date().toISOString(),
+  };
 }
 
 export interface OperatorClient {
