@@ -25,27 +25,38 @@ export class HttpOperatorClient implements OperatorClient {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.timeoutMs);
 
-    const res = await fetch(`${this.baseUrl}${path}`, {
-      method: "GET",
-      signal: controller.signal,
-      headers: {
-        "content-type": "application/json",
-      },
-    }).catch((err) => {
-      clearTimeout(timeoutId);
-      throw err;
-    });
+    try {
+      const res = await fetch(`${this.baseUrl}${path}`, {
+        method: "GET",
+        signal: controller.signal,
+        headers: {
+          "content-type": "application/json",
+        },
+      });
 
-    clearTimeout(timeoutId);
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        const error = new Error(`Operator error ${res.status}: ${text}`);
+        (error as any).statusCode = 502;
+        throw error;
+      }
 
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      const error = new Error(`Operator error ${res.status}: ${text}`);
-      (error as any).statusCode = 502;
+      return res.json() as Promise<T>;
+    } catch (err: any) {
+      if (err?.name === "AbortError" || controller.signal.aborted) {
+        const timeoutError = new Error("Operator request timed out");
+        (timeoutError as any).statusCode = 504;
+        throw timeoutError;
+      }
+
+      const error = err instanceof Error ? err : new Error("Operator request failed");
+      if (!(error as any).statusCode) {
+        (error as any).statusCode = 502;
+      }
       throw error;
+    } finally {
+      clearTimeout(timeoutId);
     }
-
-    return res.json() as Promise<T>;
   }
 
   async getFinanceSummary(): Promise<FinanceSummary> {
