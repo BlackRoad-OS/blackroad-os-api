@@ -28,7 +28,7 @@ app = FastAPI(
 )
 
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceededType, lambda request, exc: rate_limit_handler(request, exc))
+app.add_exception_handler(RateLimitExceededType, rate_limit_handler)
 
 app.add_middleware(SlowAPIMiddleware)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
