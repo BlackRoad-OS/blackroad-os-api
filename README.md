@@ -42,6 +42,8 @@ Environment is centralized in `src/config.ts` via `getConfig()`.
 - The API is a thin adapter: it shapes responses, validates inputs, and delegates business logic to `blackroad-os-operator` and `blackroad-os-core` when available.
 - RoadChain and some finance data are mocked for now; TODO markers indicate where to swap in real upstream calls.
 - Responses always follow the `{ ok: boolean; data?; error? }` envelope to keep Prism and other clients stable.
+- Requests are validated with Zod via `validateRequest`; invalid params return `{ ok: false, error: { code: "INVALID_REQUEST" } }`.
+- Run `npm run generate:openapi` to produce `docs/openapi.generated.json` from the runtime schemas.
 
 ## Testing
 ```bash

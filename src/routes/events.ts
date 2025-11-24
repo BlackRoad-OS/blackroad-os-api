@@ -1,5 +1,7 @@
 import { Router } from "express";
+import { validateRequest } from "../middleware/validateRequest";
 import { ApiResponse, EventRecord } from "../types/api";
+import { EventsQuery, eventsQuerySchema } from "../validation/schemas";
 
 const MOCK_EVENTS: EventRecord[] = [
   {
@@ -32,18 +34,21 @@ const MOCK_EVENTS: EventRecord[] = [
 export function createEventsRouter() {
   const router = Router();
 
-  router.get("/", (req, res) => {
-    const { limit = "50", severity, source } = req.query;
-    const parsedLimit = Math.max(1, Math.min(Number(limit) || 50, 200));
-    const filtered = MOCK_EVENTS.filter((event) => {
-      const severityMatch = severity ? event.severity === severity : true;
-      const sourceMatch = source ? event.source === source : true;
-      return severityMatch && sourceMatch;
-    }).slice(0, parsedLimit);
+  router.get(
+    "/",
+    validateRequest({ query: eventsQuerySchema }),
+    (req, res) => {
+      const { limit, severity, source } = req.query as unknown as EventsQuery;
+      const filtered = MOCK_EVENTS.filter((event) => {
+        const severityMatch = severity ? event.severity === severity : true;
+        const sourceMatch = source ? event.source === source : true;
+        return severityMatch && sourceMatch;
+      }).slice(0, limit ?? 50);
 
-    const response: ApiResponse<EventRecord[]> = { ok: true, data: filtered };
-    res.json(response);
-  });
+      const response: ApiResponse<EventRecord[]> = { ok: true, data: filtered };
+      res.json(response);
+    }
+  );
 
   return router;
 }
