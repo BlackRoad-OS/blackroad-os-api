@@ -7,4 +7,4 @@ test:
 poetry run pytest
 
 codegen:
-poetry run fastapi-codegen --input openapi.yaml --output app/generated
+	poetry run fastapi-codegen --input openapi.yaml --output app/generated
