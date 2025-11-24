@@ -20,10 +20,11 @@ class UpstreamError(HTTPException):
 
 def build_error_response(code: str, message: str, request_id: Optional[str], details: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     response: Dict[str, Any] = {
+        "ok": False,
         "error": {
             "code": code,
             "message": message,
-        }
+        },
     }
     if details:
         response["error"]["details"] = details

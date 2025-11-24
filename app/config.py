@@ -5,7 +5,7 @@ from datetime import datetime
 from functools import lru_cache
 from typing import List, Optional
 
-from pydantic import AnyHttpUrl, Field, field_validator, model_validator
+from pydantic import AnyHttpUrl, Field, field_validator
 from pydantic_settings import BaseSettings
 
 
@@ -14,8 +14,8 @@ class Settings(BaseSettings):
 
     env: str = Field("development", alias="NODE_ENV")
     public_api_url: Optional[AnyHttpUrl] = Field(None, alias="PUBLIC_API_URL")
-    core_api_url: Optional[AnyHttpUrl] = Field(None, alias="CORE_API_URL")
-    agents_api_url: Optional[AnyHttpUrl] = Field(None, alias="AGENTS_API_URL")
+    operator_url: Optional[AnyHttpUrl] = Field(None, alias="OPERATOR_URL")
+    pack_index_url: Optional[AnyHttpUrl] = Field(None, alias="PACK_INDEX_URL")
 
     api_keys: List[str] = Field(default_factory=list, alias="API_KEYS")
     public_api_key: Optional[str] = Field(None, alias="PUBLIC_API_KEY")
@@ -48,31 +48,6 @@ class Settings(BaseSettings):
             return [key.strip() for key in value.split(",") if key.strip()]
         return value
 
-    @model_validator(mode="after")
-    @classmethod
-    def validate_required(cls, values: "Settings") -> "Settings":
-        if values.env.lower() != "development":
-            missing = []
-            if not values.public_api_url:
-                missing.append("PUBLIC_API_URL")
-            if not values.core_api_url:
-                missing.append("CORE_API_URL")
-            if not (values.api_keys or values.public_api_key):
-                missing.append("API_KEYS or PUBLIC_API_KEY")
-            if missing:
-                raise ValueError(
-                    f"Missing required environment variables: {', '.join(missing)}"
-                )
-        return values
-
-    @property
-    def core_configured(self) -> bool:
-        return bool(self.core_api_url)
-
-    @property
-    def agents_configured(self) -> bool:
-        return bool(self.agents_api_url)
-
     @property
     def request_timeout_seconds(self) -> float:
         return max(self.request_timeout_ms, 0) / 1000
@@ -85,6 +60,10 @@ class Settings(BaseSettings):
             keys.append(self.public_api_key)
         # remove empties while preserving order
         return [key for key in keys if key]
+
+    @property
+    def api_version(self) -> str:
+        return self.commit or self.app_version
 
 
 @lru_cache()
