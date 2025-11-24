@@ -248,3 +248,6 @@ components:
             details:
               type: object
               additionalProperties: true
+            requestId:
+              type: string
+              description: Optional request identifier for tracing/debugging
