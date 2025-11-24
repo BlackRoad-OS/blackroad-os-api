@@ -1,5 +1,7 @@
 import { Router } from "express";
+import { fetchCashForecast, fetchFinanceSummary } from "../clients/operatorClient";
 import { ApiResponse, FinanceSnapshot } from "../types/api";
+import { CashForecast, FinanceSummary } from "../types/finance";
 
 function buildMockFinanceSnapshot(): FinanceSnapshot {
   const now = new Date().toISOString();
@@ -23,6 +25,26 @@ export function createFinanceRouter() {
     };
 
     res.json(response);
+  });
+
+  router.get("/summary", async (_req, res, next) => {
+    try {
+      const summary = await fetchFinanceSummary();
+      const response: ApiResponse<FinanceSummary> = { ok: true, data: summary };
+      res.json(response);
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  router.get("/cash-forecast", async (_req, res, next) => {
+    try {
+      const forecast = await fetchCashForecast();
+      const response: ApiResponse<CashForecast> = { ok: true, data: forecast };
+      res.json(response);
+    } catch (err) {
+      next(err);
+    }
   });
 
   return router;
