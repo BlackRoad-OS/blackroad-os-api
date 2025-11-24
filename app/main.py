@@ -16,6 +16,7 @@ def create_app() -> FastAPI:
     configure_logging()
     application = FastAPI(title=settings.app_name, version=settings.version)
     application.state.settings = settings
+    # TODO(celery-integration): Celery app is stored for future use. Integrate Celery tasks with FastAPI endpoints in upcoming releases.
     application.state.celery_app = celery_app
     application.state.start_time = perf_counter()
 
