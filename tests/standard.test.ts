@@ -1,9 +1,13 @@
 import request from "supertest";
 import { createApp } from "../src/server";
 
-const app = createApp();
-
 describe("Standard BlackRoad OS Endpoints", () => {
+  let app: ReturnType<typeof createApp>;
+
+  beforeEach(() => {
+    app = createApp();
+  });
+
   describe("GET /health", () => {
     it("returns ok with service name and timestamp", async () => {
       const res = await request(app).get("/health").expect(200);
@@ -59,28 +63,29 @@ describe("Standard BlackRoad OS Endpoints", () => {
     });
 
     it("uses env vars when available", async () => {
-      // Set env vars for this test
       const oldVersion = process.env.BR_OS_API_VERSION;
       const oldCommit = process.env.BR_OS_API_COMMIT;
       const oldEnv = process.env.BR_OS_ENV;
 
-      process.env.BR_OS_API_VERSION = "1.2.3";
-      process.env.BR_OS_API_COMMIT = "abc123";
-      process.env.BR_OS_ENV = "test";
+      try {
+        process.env.BR_OS_API_VERSION = "1.2.3";
+        process.env.BR_OS_API_COMMIT = "abc123";
+        process.env.BR_OS_ENV = "test";
 
-      const res = await request(app).get("/version").expect(200);
+        const res = await request(app).get("/version").expect(200);
 
-      expect(res.body.version).toBe("1.2.3");
-      expect(res.body.commit).toBe("abc123");
-      expect(res.body.env).toBe("test");
-
-      // Restore env vars
-      if (oldVersion) process.env.BR_OS_API_VERSION = oldVersion;
-      else delete process.env.BR_OS_API_VERSION;
-      if (oldCommit) process.env.BR_OS_API_COMMIT = oldCommit;
-      else delete process.env.BR_OS_API_COMMIT;
-      if (oldEnv) process.env.BR_OS_ENV = oldEnv;
-      else delete process.env.BR_OS_ENV;
+        expect(res.body.version).toBe("1.2.3");
+        expect(res.body.commit).toBe("abc123");
+        expect(res.body.env).toBe("test");
+      } finally {
+        // Restore env vars
+        if (oldVersion !== undefined) process.env.BR_OS_API_VERSION = oldVersion;
+        else delete process.env.BR_OS_API_VERSION;
+        if (oldCommit !== undefined) process.env.BR_OS_API_COMMIT = oldCommit;
+        else delete process.env.BR_OS_API_COMMIT;
+        if (oldEnv !== undefined) process.env.BR_OS_ENV = oldEnv;
+        else delete process.env.BR_OS_ENV;
+      }
     });
   });
 });

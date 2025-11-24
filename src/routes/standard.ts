@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { getConfig } from "../config";
+import packageJson from "../../package.json";
 
 /**
  * Standard endpoints required by BlackRoad OS service conventions.
@@ -45,7 +46,6 @@ export function createStandardRouter() {
    */
   router.get("/version", (_req, res) => {
     const config = getConfig();
-    const packageJson = require("../../package.json");
 
     res.json({
       service: "blackroad-os-api",
