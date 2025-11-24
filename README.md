@@ -2,6 +2,14 @@
 
 `blackroad-os-api` is the typed HTTP surface for BlackRoad OS. It exposes versioned JSON endpoints that Prism Console and other clients use to query health, agents, finance, events, and RoadChain data. This service participates in the shared **"BlackRoad OS - Master Orchestration"** project alongside Operator, Core, Prism, Web, and Infra.
 
+## Standard Infrastructure Endpoints
+
+These endpoints follow BlackRoad OS service conventions and are available at the root level:
+
+- `GET /health` – Lightweight liveness check (returns 200 if service is running)
+- `GET /ready` – Readiness check for load balancers (checks basic service configuration)
+- `GET /version` – Service version, commit, and environment info
+
 ## Core Endpoints
 All routes are prefixed with `/api/v1` and return the standard `{ ok, data | error }` envelope.
 
@@ -37,6 +45,13 @@ Environment is centralized in `src/config.ts` via `getConfig()`.
 - `OPERATOR_API_BASE_URL` – Base URL for `blackroad-os-operator` (required in production, default: `http://localhost:4100`)
 - `ROADCHAIN_BASE_URL` – Optional base for a future RoadChain backend
 - `LOG_LEVEL` – Log verbosity (default: `info`)
+
+### Optional Version Info
+
+For the `/version` endpoint, you can optionally set:
+- `BR_OS_API_VERSION` – Override version (defaults to package.json version)
+- `BR_OS_API_COMMIT` – Git commit hash (defaults to "UNKNOWN")
+- `BR_OS_ENV` – Environment name (defaults to NODE_ENV or "local")
 
 ## Development Notes
 - The API is a thin adapter: it shapes responses, validates inputs, and delegates business logic to `blackroad-os-operator` and `blackroad-os-core` when available.
