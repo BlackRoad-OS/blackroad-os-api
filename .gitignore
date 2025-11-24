@@ -215,3 +215,6 @@ npm-debug.log*
 # Allow TypeScript library utilities under src/lib
 !src/lib/
 !src/lib/**
+
+# Generated artifacts
+public/sig.beacon.json

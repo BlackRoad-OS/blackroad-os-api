@@ -1,37 +1,28 @@
-from __future__ import annotations
+"""Application entrypoint for blackroad-os-api."""
+
+from time import perf_counter
 
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 
-from app import __version__
-from app.middleware.errors import ErrorHandlerMiddleware
-from app.middleware.request_id import RequestIdMiddleware
-from app.routes import root
-from app.routes.v1.router import router as v1_router
-
-app = FastAPI(
-    title="BlackRoad OS API",
-    description="Minimal API service for BlackRoad OS",
-    version=__version__,
-)
-
-# Middleware execution order: Last added = first executed (outermost layer)
-# Request flow: ErrorHandler -> RequestId -> CORS -> App
-# This ensures ErrorHandler can catch exceptions from all other middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-app.add_middleware(RequestIdMiddleware)  # Second added = middle layer
-app.add_middleware(ErrorHandlerMiddleware)  # Last added = outermost, catches all errors
-
-app.include_router(root.router)
-app.include_router(v1_router)
+from app.api.v1.router import router as v1_router
+from app.core.logging import configure_logging
+from app.core.settings import settings
+from app.workers.sample_task import celery_app
 
 
-@app.get("/", include_in_schema=False)
-async def index():
-    return {"message": "BlackRoad public API gateway", "docs": "/docs"}
+def create_app() -> FastAPI:
+    """Instantiate the FastAPI application."""
+
+    configure_logging()
+    application = FastAPI(title=settings.app_name, version=settings.version)
+    application.state.settings = settings
+    application.state.celery_app = celery_app
+    application.state.start_time = perf_counter()
+
+    # TODO(api-next): add authentication, rate limiting, and tracing middleware.
+    application.include_router(v1_router)
+    return application
+
+
+app = create_app()
+__all__ = ["app"]
