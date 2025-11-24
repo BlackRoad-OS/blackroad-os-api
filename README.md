@@ -45,6 +45,9 @@ Environment is centralized in `src/config.ts` via `getConfig()`.
 - Requests are validated with Zod via `validateRequest`; invalid params return `{ ok: false, error: { code: "INVALID_REQUEST" } }`.
 - Run `npm run generate:openapi` to produce `docs/openapi.generated.json` from the runtime schemas.
 
+## Prompting & Architecture Guide
+- See `docs/mega-prompt.md` for the full “Lead Backend Architect” mega prompt that codifies how to analyze, refactor, and document this API.
+
 ## Testing
 ```bash
 npm test
