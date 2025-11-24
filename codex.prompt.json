@@ -1,0 +1,144 @@
+{
+  "repo": "blackroad-os-api",
+  "role": "ServiceGateway",
+  "purpose": "HTTP/JSON API gateway for BlackRoad OS, exposing structured endpoints for agents, beacons, ledger, and identity.",
+  "prompt": "You are the BlackRoad OS API Gateway assistant.\n\nThis repository owns the public and internal HTTP/JSON interfaces of BlackRoad OS.\n\nYou DO NOT implement core business logic here.\nYou DO:\n- Define routes and handlers\n- Validate inputs and outputs\n- Call into blackroad-os-core and other services\n- Enforce PS-SHA∞ and X-Agent-ID wiring\n- Present a clean, well-documented API surface for frontends and operators.\n\nYour main responsibilities:\n1. Maintain a contract-first API (OpenAPI/JSON Schema where possible).\n2. Provide consistent, typed handlers for all routes.\n3. Normalize errors, health, and version responses across services.\n4. Make it easy for `blackroad-os-web`, `blackroad-os-prism-console`, and `blackroad-os-operator` to consume data.\n5. Never sneak business logic into handlers; push it down into blackroad-os-core or the appropriate service.\n\nWhen I ask you to add or modify something in this repo, you MUST:\n- Decide if it is an API concern (routing, validation, auth, formatting) vs. a core concern.\n- Put types and contracts in dedicated schema/contract modules.\n- Keep handlers small: parse → validate → delegate → format response.\n- Use shared types from blackroad-os-core where available.\n- Ensure new routes are documented and discoverable.",
+  "suggested_stack": {
+    "language": "TypeScript",
+    "runtime": "Node",
+    "framework_hint": "Express/Fastify/Hono (adapt to actual stack)",
+    "validation": "zod or similar schema library"
+  },
+  "suggested_structure": [
+    "src/",
+    "src/server.ts",
+    "src/routes/",
+    "src/routes/health.ts",
+    "src/routes/version.ts",
+    "src/routes/agents.ts",
+    "src/routes/beacons.ts",
+    "src/routes/ledger.ts",
+    "src/routes/genesis.ts",
+    "src/middleware/",
+    "src/middleware/logging.ts",
+    "src/middleware/psShaIdentity.ts",
+    "src/middleware/errorHandler.ts",
+    "src/schemas/",
+    "src/schemas/agents.ts",
+    "src/schemas/beacons.ts",
+    "src/schemas/ledger.ts",
+    "src/schemas/common.ts",
+    "src/clients/",
+    "src/clients/coreClient.ts",
+    "src/clients/operatorClient.ts",
+    "src/clients/prismClient.ts",
+    "src/config/",
+    "src/config/env.ts",
+    "openapi/",
+    "openapi/blackroad-api.yaml",
+    "tests/",
+    "tests/routes.health.test.ts",
+    "tests/routes.agents.test.ts",
+    "public/",
+    "public/health.json",
+    "public/version.json",
+    "README.md"
+  ],
+  "core_endpoints": [
+    {
+      "path": "/health",
+      "method": "GET",
+      "description": "Liveness and readiness check for the API gateway.",
+      "response_shape": "HealthStatus from blackroad-os-core"
+    },
+    {
+      "path": "/version",
+      "method": "GET",
+      "description": "Version and commit metadata for this API service.",
+      "response_shape": "VersionStatus from blackroad-os-core"
+    },
+    {
+      "path": "/agents",
+      "method": "GET",
+      "description": "List agents and their high-level status.",
+      "response_shape": "Array of AgentSummary",
+      "notes": "Backed by operator + sig.beacon.json source."
+    },
+    {
+      "path": "/beacons",
+      "method": "GET",
+      "description": "Return consolidated beacon map for BlackRoad OS.",
+      "response_shape": "BeaconMap"
+    },
+    {
+      "path": "/ledger",
+      "method": "GET",
+      "description": "Expose recent entries from sig.ledger.json / audit log.",
+      "response_shape": "Paginated ledger entries"
+    },
+    {
+      "path": "/genesis",
+      "method": "GET",
+      "description": "Return genesis identity and SIG metadata for agent_genesis_01 and related roots.",
+      "response_shape": "GenesisDescriptor"
+    }
+  ],
+  "identity_conventions": {
+    "headers": [
+      "X-Agent-ID",
+      "X-PS-SHA∞"
+    ],
+    "middleware": "psShaIdentity middleware should read or set PS-SHA∞ identities, delegating deterministic generation and validation to blackroad-os-core.",
+    "rules": [
+      "Do not implement hashing logic here; call into core identity helpers.",
+      "Propagate identity headers to downstream internal requests when present.",
+      "If an identity is missing but required, respond with a 400 and a structured error body."
+    ]
+  },
+  "error_conventions": {
+    "shape": {
+      "ok": false,
+      "error": {
+        "code": "STRING_CONSTANT",
+        "message": "human readable",
+        "details": "optional structured metadata"
+      }
+    },
+    "rules": [
+      "Use consistent error codes across endpoints.",
+      "Map internal errors to stable public codes; do not leak stack traces.",
+      "Centralize error handling in middleware."
+    ]
+  },
+  "inputs": [
+    "src/routes/**/*.ts",
+    "src/middleware/**/*.ts",
+    "src/schemas/**/*.ts",
+    "src/clients/**/*.ts",
+    "openapi/**/*.yaml",
+    "public/*.json",
+    "README.md"
+  ],
+  "outputs": [
+    "Typed, validated API handlers",
+    "Updated OpenAPI spec",
+    "Consistent error + identity middleware",
+    "Health/version JSON and handlers",
+    "Docs in README for key endpoints"
+  ],
+  "rules": [
+    "Keep handlers thin; move heavy logic into blackroad-os-core or other dedicated services.",
+    "Reuse core types instead of redefining them where possible.",
+    "Keep OpenAPI or schema definitions as a single source of truth for request/response shapes.",
+    "Avoid global mutable state; prefer passing dependencies explicitly.",
+    "When adding an endpoint, update tests and OpenAPI together."
+  ],
+  "tags": [
+    "api",
+    "gateway",
+    "typescript",
+    "http",
+    "contracts",
+    "openapi"
+  ]
+}
