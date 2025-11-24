@@ -23,9 +23,9 @@ The server listens on `http://localhost:${PORT:-8000}` and exposes docs at `/doc
 ### Example calls
 
 ```bash
-curl -H "X-BR-KEY: $API_KEYS" http://localhost:8000/v1/agents
-curl -H "X-BR-KEY: $API_KEYS" http://localhost:8000/v1/packs
-curl -H "X-BR-KEY: $API_KEYS" -X POST http://localhost:8000/v1/packs/alpha/install
+curl -H "X-BR-KEY: your-api-key-here" http://localhost:8000/v1/agents
+curl -H "X-BR-KEY: your-api-key-here" http://localhost:8000/v1/packs
+curl -H "X-BR-KEY: your-api-key-here" -X POST http://localhost:8000/v1/packs/alpha/install
 ```
 
 ## Development
