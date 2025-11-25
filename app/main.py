@@ -1,33 +1,9 @@
 """Application entrypoint for blackroad-os-api."""
 
-from time import perf_counter
-
-from fastapi import FastAPI
-
-from app.api.v1.router import router as v1_router
-from app.core.logging import configure_logging
-from app.core.settings import settings
-from app.workers.sample_task import celery_app
-
-
-def create_app() -> FastAPI:
-    """Instantiate the FastAPI application."""
-
-    configure_logging()
-    application = FastAPI(title=settings.app_name, version=settings.version)
-    application.state.settings = settings
-    # TODO(celery-integration): Celery app is stored for future use. Integrate Celery tasks with FastAPI endpoints in upcoming releases.
-    application.state.celery_app = celery_app
-    application.state.start_time = perf_counter()
-
-    # TODO(api-next): add authentication, rate limiting, and tracing middleware.
-    application.include_router(v1_router)
-    return application
-
-
-app = create_app()
-__all__ = ["app"]
 import pathlib
+import time
+from datetime import datetime, timezone
+
 import yaml
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -37,6 +13,7 @@ from slowapi.middleware import SlowAPIMiddleware
 
 from app import __version__
 from app.config import get_settings
+from app.core.settings import settings as core_settings
 from app.generated import models  # noqa: F401
 from app.generated.router import router as generated_router
 from app.middleware.errors import ErrorHandlerMiddleware
@@ -46,6 +23,20 @@ from app.rate_limiting import RateLimitExceeded as RateLimitExceededType, limite
 
 BASE_DIR = pathlib.Path(__file__).resolve().parent.parent
 OPENAPI_PATH = BASE_DIR / "openapi.yaml"
+
+# Track start time for uptime calculation
+_start_time = time.monotonic()
+
+
+def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    from app.errors import build_error_response
+
+    payload = build_error_response(
+        code="RATE_LIMIT_EXCEEDED",
+        message=str(exc.detail) if getattr(exc, "detail", None) else "Too many requests",
+        request_id=getattr(request.state, "request_id", None),
+    )
+    return JSONResponse(status_code=429, content=payload)
 
 
 app = FastAPI(
@@ -69,22 +60,6 @@ app.include_router(generated_router)
 original_openapi = app.openapi
 
 
-@app.get("/", include_in_schema=False)
-async def index():
-    return {"message": "BlackRoad public API gateway", "docs": "/docs"}
-
-
-def rate_limit_handler(request: Request, exc: RateLimitExceeded):
-    from app.errors import build_error_response
-
-    payload = build_error_response(
-        code="RATE_LIMIT_EXCEEDED",
-        message=str(exc.detail) if getattr(exc, "detail", None) else "Too many requests",
-        request_id=getattr(request.state, "request_id", None),
-    )
-    return JSONResponse(status_code=429, content=payload)
-
-
 def custom_openapi():
     if app.openapi_schema:
         return app.openapi_schema
@@ -97,3 +72,36 @@ def custom_openapi():
 
 
 app.openapi = custom_openapi
+
+
+@app.get("/", include_in_schema=False)
+async def index():
+    return {"message": "BlackRoad public API gateway", "docs": "/docs"}
+
+
+# --- Standard Infrastructure Endpoints (root level) ---
+# These endpoints follow BlackRoad OS service conventions
+
+@app.get("/health", include_in_schema=False)
+def health():
+    """Lightweight liveness check - returns 200 if service is running."""
+    uptime = max(time.monotonic() - _start_time, 0.0)
+    return {"status": "ok", "uptime": round(uptime, 3)}
+
+
+@app.get("/ready", include_in_schema=False)
+def ready():
+    """Readiness check for load balancers."""
+    return {
+        "ready": True,
+        "service": "blackroad-os-api",
+    }
+
+
+@app.get("/version", include_in_schema=False)
+def version():
+    """Service version, commit, and environment info."""
+    return {
+        "version": core_settings.version,
+        "commit": core_settings.git_sha,
+    }
