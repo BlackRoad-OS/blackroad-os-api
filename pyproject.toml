@@ -42,3 +42,15 @@ pythonpath = ["."]
 testpaths = ["tests"]
 asyncio_mode = "auto"
 addopts = "--cov=app --cov-report=term-missing --cov-fail-under=90"
+
+[tool.coverage.run]
+omit = [
+    # Dead code - unused legacy router
+    "app/api/v1/router.py",
+    # Dead code - Celery workers not integrated (missing celery dependency)
+    "app/workers/*",
+    # Dead code - logging module not called from main
+    "app/core/logging.py",
+    # Dead code - empty models file
+    "app/models/common.py",
+]
