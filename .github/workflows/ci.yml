@@ -31,3 +31,95 @@ jobs:
 
       - name: Run Tests
         run: pytest
+
+on:
+  push:
+    branches:
+      - feat/api-gateway-v1
+  pull_request:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+  pull-requests: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Poetry
+        run: pip install poetry==2.2.1
+      - name: Install dependencies
+        run: poetry install --no-interaction
+      - name: Run pytest
+        run: poetry run pytest
+      - name: Run schemathesis contract checks
+        run: |
+          poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000 &
+          SERVER_PID=$!
+          sleep 2
+          poetry run schemathesis run --checks all --data-generation-methods positive --max-examples 5 --base-url http://127.0.0.1:8000 openapi.yaml
+          kill $SERVER_PID
+
+  publish-openapi:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/feat/api-gateway-v1'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Upload OpenAPI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: openapi.yaml
+          path: openapi.yaml
+      - name: Prepare Swagger UI preview
+        run: |
+          mkdir -p public
+          cp openapi.yaml public/openapi.yaml
+          cat > public/index.html <<'HTML'
+          <!doctype html>
+          <html>
+          <head>
+            <title>BlackRoad OS API – Swagger Preview</title>
+            <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css">
+          </head>
+          <body>
+            <div id="swagger-ui"></div>
+            <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+            <script>
+              SwaggerUIBundle({ url: './openapi.yaml', dom_id: '#swagger-ui' });
+            </script>
+          </body>
+          </html>
+          HTML
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./public
+      - name: Deploy Swagger preview
+        id: deployment
+        uses: actions/deploy-pages@v4
+      - name: Comment PR with Swagger link
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const url = "${{ steps.deployment.outputs.page_url }}";
+            const body = `Swagger UI preview: ${url}`;
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body
+            });
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
