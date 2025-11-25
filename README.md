@@ -26,6 +26,42 @@ docker run -e PORT=8000 -p 8000:8000 blackroad/api:0.0.1
 ## Tasks
 
 Celery 5 is wired via `app/workers/sample_task.py`. Configure `CELERY_BROKER_URL` in the environment to dispatch jobs; the sample task logs and echoes incoming payloads.
+`blackroad-os-api` is the typed HTTP surface for BlackRoad OS. It exposes versioned JSON endpoints that Prism Console and other clients use to query health, agents, finance, events, and RoadChain data. This service participates in the shared **"BlackRoad OS - Master Orchestration"** project alongside Operator, Core, Prism, Web, and Infra.
+
+## Standard Infrastructure Endpoints
+
+These endpoints follow BlackRoad OS service conventions and are available at the root level:
+
+- `GET /health` – Lightweight liveness check (returns 200 if service is running)
+- `GET /ready` – Readiness check for load balancers (checks basic service configuration)
+- `GET /version` – Service version, commit, and environment info
+
+## Core Endpoints
+All routes are prefixed with `/api/v1` and return the standard `{ ok, data | error }` envelope.
+
+- `GET /api/v1/health` – API + dependency health summary
+- `GET /api/v1/system/overview` – Aggregated system status and recent metrics
+- `GET /api/v1/agents` – List agents with optional `status` and `q` filters
+- `GET /api/v1/agents/:id` – Agent detail
+- `GET /api/v1/finance/snapshot` – Finance/treasury snapshot
+- `GET /api/v1/events` – Recent journal-style events with optional filters
+- `GET /api/v1/roadchain/blocks` – RoadChain block headers (mocked for now)
+
+## Getting Started
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+2. Run in development mode:
+   ```bash
+   npm run dev
+   ```
+3. Build and start production bundle:
+   ```bash
+   npm run build && npm start
+   ```
+
+The server listens on `http://localhost:4000` by default or the configured `PORT`.
 
 ## Configuration
 
@@ -37,6 +73,19 @@ Runtime settings live in `app/core/settings.py` using Pydantic v2 `BaseSettings`
 Copy `infra/api.env.example` to configure a local `.env`.
 
 ## Development
+### Optional Version Info
+
+For the `/version` endpoint, you can optionally set:
+- `BR_OS_API_VERSION` – Override version (defaults to package.json version)
+- `BR_OS_API_COMMIT` – Git commit hash (defaults to "UNKNOWN")
+- `BR_OS_ENV` – Environment name (defaults to NODE_ENV or "local")
+
+## Development Notes
+- The API is a thin adapter: it shapes responses, validates inputs, and delegates business logic to `blackroad-os-operator` and `blackroad-os-core` when available.
+- RoadChain and some finance data are mocked for now; TODO markers indicate where to swap in real upstream calls.
+- Responses always follow the `{ ok: boolean; data?; error? }` envelope to keep Prism and other clients stable.
+- Requests are validated with Zod via `validateRequest`; invalid params return `{ ok: false, error: { code: "INVALID_REQUEST" } }`.
+- Run `npm run generate:openapi` to produce `docs/openapi.generated.json` from the runtime schemas.
 
 - Linting: `ruff check .`
 - Formatting: `black .`
