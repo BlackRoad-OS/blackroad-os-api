@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@f43a3398dc5d8737c2dbc7bf8ad6b50918d7a3d4
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -51,7 +51,7 @@ jobs:
       matrix:
         python-version: ["3.10", "3.11"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@f43a3398dc5d8737c2dbc7bf8ad6b50918d7a3d4
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
@@ -74,7 +74,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request' || github.ref == 'refs/heads/feat/api-gateway-v1'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@f43a3398dc5d8737c2dbc7bf8ad6b50918d7a3d4
       - name: Upload OpenAPI artifact
         uses: actions/upload-artifact@v4
         with:
