@@ -218,3 +218,6 @@ npm-debug.log*
 
 # Generated artifacts
 public/sig.beacon.json
+node_modules/
+dist/
+.wrangler/

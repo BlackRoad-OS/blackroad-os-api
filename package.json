@@ -1,0 +1,20 @@
+{
+  "name": "blackroad-api",
+  "version": "0.1.0",
+  "description": "BlackRoad Agency Detection & Agent Mesh API",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "start": "node --experimental-specifier-resolution=node dist/index.js"
+  },
+  "dependencies": {
+    "hono": "^4.0.0",
+    "nanoid": "^5.0.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240117.0",
+    "typescript": "^5.3.0",
+    "wrangler": "^3.0.0"
+  }
+}
