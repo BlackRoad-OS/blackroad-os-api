@@ -1,19 +1,7 @@
 [build-system]
-requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
 
-[tool.black]
-line-length = 88
-target-version = ["py311"]
-
-[tool.isort]
-profile = "black"
-line_length = 88
-known_first_party = ["app"]
-
-[tool.pytest.ini_options]
-pythonpath = ["."]
-testpaths = ["tests"]
 [tool.poetry]
 name = "blackroad-os-api"
 version = "0.1.0"
@@ -40,10 +28,17 @@ pytest-cov = "^6.0.0"
 schemathesis = "^3.37.0"
 respx = "^0.21.1"
 
+[tool.black]
+line-length = 88
+target-version = ["py311"]
+
+[tool.isort]
+profile = "black"
+line_length = 88
+known_first_party = ["app"]
+
 [tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
 asyncio_mode = "auto"
 addopts = "--cov=app --cov-report=term-missing --cov-fail-under=90"
-
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
