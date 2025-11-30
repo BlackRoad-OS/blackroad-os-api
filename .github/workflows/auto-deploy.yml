@@ -32,9 +32,8 @@ jobs:
         id: detect
         run: |
           # Detect what kind of project this is
-          if [ -f "railway.toml" ] || [ -f "railway.json" ]; then
-            echo "platform=railway" >> $GITHUB_OUTPUT
-          elif [ -f "wrangler.toml" ] || [ -f "wrangler.json" ]; then
+          # Priority: wrangler.toml > next/vite > railway.toml > Dockerfile > Python > static
+          if [ -f "wrangler.toml" ] || [ -f "wrangler.json" ]; then
             echo "platform=cloudflare-workers" >> $GITHUB_OUTPUT
           elif [ -f "next.config.js" ] || [ -f "next.config.mjs" ] || [ -f "next.config.ts" ]; then
             echo "platform=cloudflare-pages" >> $GITHUB_OUTPUT
@@ -42,6 +41,8 @@ jobs:
           elif [ -f "vite.config.ts" ] || [ -f "vite.config.js" ]; then
             echo "platform=cloudflare-pages" >> $GITHUB_OUTPUT
             echo "framework=vite" >> $GITHUB_OUTPUT
+          elif [ -f "railway.toml" ] || [ -f "railway.json" ]; then
+            echo "platform=railway" >> $GITHUB_OUTPUT
           elif [ -f "Dockerfile" ]; then
             echo "platform=railway" >> $GITHUB_OUTPUT
           elif [ -f "requirements.txt" ] || [ -f "pyproject.toml" ]; then
@@ -51,7 +52,7 @@ jobs:
             echo "platform=cloudflare-pages" >> $GITHUB_OUTPUT
             echo "framework=static" >> $GITHUB_OUTPUT
           else
-            echo "platform=railway" >> $GITHUB_OUTPUT
+            echo "platform=cloudflare-pages" >> $GITHUB_OUTPUT
           fi
 
           # Get repo name for service naming
