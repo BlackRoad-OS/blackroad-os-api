@@ -10,7 +10,7 @@ RUN apt-get update && \
 RUN pip install --no-cache-dir "poetry==${POETRY_VERSION}"
 ENV POETRY_VIRTUALENVS_CREATE=false
 
-COPY pyproject.toml poetry.lock ./
+COPY pyproject.toml poetry.lock README.md ./
 RUN poetry install --without dev --no-interaction --no-ansi
 COPY . .
 RUN poetry install --without dev --no-interaction --no-ansi
