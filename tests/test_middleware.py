@@ -1,5 +1,7 @@
 import json
 
+import json
+
 import pytest
 from fastapi import Request
 

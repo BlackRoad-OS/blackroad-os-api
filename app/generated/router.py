@@ -1,14 +1,12 @@
 #   filename:  openapi.yaml
 #   generated with fastapi-codegen and extended with gateway logic
-from __future__ import annotations
-
 import time
 from datetime import datetime, timezone
-from typing import Annotated, Optional, Union
+from typing import Annotated, Union
 
 import httpx
 
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, Body, Depends, Request, status
 
 from app.clients.catalog_client import CatalogClient
 from app.clients.operator_client import OperatorClient
@@ -128,11 +126,11 @@ async def list_packs(
 async def install_pack(
     request: Request,
     id: str,
-    body: Optional[PackInstallRequest] = None,
+    body: PackInstallRequest | None = Body(default=None),
     settings: Settings = Depends(get_settings),
     _: str = Depends(api_key_auth),
     operator_client: OperatorClient = Depends(get_operator_client),
-) -> Optional[Union[PackInstallResponse, ErrorResponse]]:
+) -> PackInstallResponse | ErrorResponse | None:
     if not id:
         return _error("INVALID_PACK", "Pack id is required")
 

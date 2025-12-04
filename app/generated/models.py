@@ -63,3 +63,7 @@ class Error(BaseModel):
 class ErrorResponse(BaseModel):
     ok: Literal[False] = False
     error: Error
+
+
+# Resolve forward references for Body parsing in FastAPI
+PackInstallRequest.model_rebuild()
