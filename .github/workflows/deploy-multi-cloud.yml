@@ -7,24 +7,43 @@ on:
 
 env:
   NODE_VERSION: '20'
+  PYTHON_VERSION: '3.11'
 
 jobs:
   deploy-cloudflare:
-    name: ☁️ Cloudflare Pages
+    name: ☁️ Cloudflare Workers
     runs-on: ubuntu-latest
+    outputs:
+      status: ${{ steps.deploy.outcome }}
+      url: ${{ steps.deploy.outputs.url }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Deploy changed domains
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Deploy to Cloudflare Workers
+        id: deploy
         run: |
-          # Will be triggered by main deploy-cloudflare-all.yml workflow
-          echo "✅ Cloudflare deployment handled by deploy-cloudflare-all.yml"
+          npx wrangler deploy --var GIT_SHA:${{ github.sha }}
+          echo "url=https://api.blackroad.io" >> $GITHUB_OUTPUT
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
   deploy-vercel:
     name: ▲ Vercel
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
+    outputs:
+      status: ${{ job.status }}
     strategy:
+      fail-fast: false
       matrix:
         domain:
           - math-blackroad-io
@@ -58,6 +77,9 @@ jobs:
     name: 🚂 Railway
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
+    outputs:
+      status: ${{ job.status }}
+      url: ${{ steps.deploy.outputs.url }}
     steps:
       - uses: actions/checkout@v4
 
@@ -65,15 +87,19 @@ jobs:
         run: npm install -g @railway/cli
 
       - name: Deploy to Railway
+        id: deploy
         run: |
           railway up --detach
+          echo "url=$(railway status --json | jq -r '.deploymentDomain // empty')" >> $GITHUB_OUTPUT
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
   deploy-digitalocean:
-    name: 🌊 DigitalOcean
+    name: 🌊 DigitalOcean Droplet
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
+    outputs:
+      status: ${{ job.status }}
     steps:
       - uses: actions/checkout@v4
 
@@ -82,60 +108,210 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.DIGITALOCEAN_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
+          echo "${{ secrets.DIGITALOCEAN_DROPLET_IP }}" | xargs -I {} ssh-keyscan -H {} >> ~/.ssh/known_hosts 2>/dev/null || \
           ssh-keyscan -H 159.65.43.12 >> ~/.ssh/known_hosts
 
       - name: Deploy to Droplet
         run: |
-          rsync -avz --exclude='.git' --exclude='node_modules' \
-            ./ root@159.65.43.12:/opt/blackroad/
+          DROPLET_IP="${{ secrets.DIGITALOCEAN_DROPLET_IP }}"
+          DROPLET_IP="${DROPLET_IP:-159.65.43.12}"
 
-          ssh root@159.65.43.12 'cd /opt/blackroad && ./deploy.sh restart'
+          rsync -avz --exclude='.git' --exclude='node_modules' --exclude='__pycache__' \
+            ./ root@${DROPLET_IP}:/opt/blackroad/
+
+          ssh root@${DROPLET_IP} 'cd /opt/blackroad && ./deploy.sh restart'
 
   deploy-pis:
     name: 🥧 Raspberry Pi Fleet
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
+    outputs:
+      status: ${{ job.status }}
     steps:
       - name: Trigger Pi deployment workflow
-        run: |
-          # This will trigger the deploy-to-pis.yml workflow
-          echo "✅ Pi deployment handled by deploy-to-pis.yml"
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'deploy-to-pis.yml',
+              ref: context.ref
+            });
+            console.log('✅ Pi deployment workflow triggered');
 
   update-notion:
     name: 📝 Update Notion
     runs-on: ubuntu-latest
     needs: [deploy-cloudflare, deploy-vercel, deploy-railway, deploy-digitalocean]
-    if: always()
+    if: always() && secrets.NOTION_TOKEN != ''
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: pip install requests
+
       - name: Log deployment to Notion
         run: |
-          # TODO: Use Notion API to create deployment log page
-          echo "Deployment completed at $(date)"
-          echo "Platforms: Cloudflare, Vercel, Railway, DigitalOcean, Pis"
+          python3 << 'SCRIPT'
+          import os
+          import requests
+          import json
+          from datetime import datetime
+
+          NOTION_TOKEN = os.environ.get('NOTION_TOKEN')
+          NOTION_DATABASE_ID = os.environ.get('NOTION_DATABASE_ID', '')
+
+          if not NOTION_TOKEN:
+              print("⚠️ NOTION_TOKEN not set, skipping Notion update")
+              exit(0)
+
+          if not NOTION_DATABASE_ID:
+              print("⚠️ NOTION_DATABASE_ID not set, skipping Notion update")
+              exit(0)
+
+          headers = {
+              'Authorization': f'Bearer {NOTION_TOKEN}',
+              'Content-Type': 'application/json',
+              'Notion-Version': '2022-06-28'
+          }
+
+          # Create deployment log entry
+          deployment_data = {
+              'parent': {'database_id': NOTION_DATABASE_ID},
+              'properties': {
+                  'Name': {
+                      'title': [{'text': {'content': f'Deployment {datetime.now().isoformat()}'}}]
+                  },
+                  'Status': {
+                      'select': {'name': 'Completed'}
+                  },
+                  'Platforms': {
+                      'multi_select': [
+                          {'name': 'Cloudflare'},
+                          {'name': 'Vercel'},
+                          {'name': 'Railway'},
+                          {'name': 'DigitalOcean'},
+                          {'name': 'Raspberry Pi'}
+                      ]
+                  },
+                  'Commit': {
+                      'rich_text': [{'text': {'content': os.environ.get('GITHUB_SHA', '')[:7]}}]
+                  },
+                  'Date': {
+                      'date': {'start': datetime.now().isoformat()}
+                  }
+              }
+          }
+
+          try:
+              response = requests.post(
+                  'https://api.notion.com/v1/pages',
+                  headers=headers,
+                  json=deployment_data
+              )
+
+              if response.status_code == 200:
+                  print(f"✅ Deployment logged to Notion: {response.json().get('url', 'success')}")
+              else:
+                  print(f"⚠️ Notion API returned {response.status_code}: {response.text}")
+          except Exception as e:
+              print(f"⚠️ Failed to update Notion: {e}")
+          SCRIPT
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+          GITHUB_SHA: ${{ github.sha }}
 
   update-asana:
     name: 📊 Update Asana
     runs-on: ubuntu-latest
     needs: [deploy-cloudflare, deploy-vercel, deploy-railway, deploy-digitalocean]
-    if: always()
+    if: always() && secrets.ASANA_TOKEN != ''
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: pip install requests
+
       - name: Update Asana tasks
         run: |
-          # TODO: Use Asana API to mark deployment task complete
-          echo "Deployment task updated in Asana"
+          python3 << 'SCRIPT'
+          import os
+          import requests
+          from datetime import datetime
+
+          ASANA_TOKEN = os.environ.get('ASANA_TOKEN')
+          ASANA_PROJECT_ID = os.environ.get('ASANA_PROJECT_ID', '')
+
+          if not ASANA_TOKEN:
+              print("⚠️ ASANA_TOKEN not set, skipping Asana update")
+              exit(0)
+
+          if not ASANA_PROJECT_ID:
+              print("⚠️ ASANA_PROJECT_ID not set, skipping Asana update")
+              exit(0)
+
+          headers = {
+              'Authorization': f'Bearer {ASANA_TOKEN}',
+              'Content-Type': 'application/json'
+          }
+
+          # Create task for deployment record
+          task_data = {
+              'data': {
+                  'name': f'Deployment: {datetime.now().strftime("%Y-%m-%d %H:%M")}',
+                  'notes': f'''Multi-cloud deployment completed
+
+          Commit: {os.environ.get('GITHUB_SHA', '')[:7]}
+          Branch: {os.environ.get('GITHUB_REF_NAME', 'main')}
+
+          Platforms deployed:
+          - Cloudflare Workers
+          - Vercel
+          - Railway
+          - DigitalOcean Droplet
+          - Raspberry Pi Fleet
+          ''',
+                  'projects': [ASANA_PROJECT_ID],
+                  'completed': True
+              }
+          }
+
+          try:
+              response = requests.post(
+                  'https://app.asana.com/api/1.0/tasks',
+                  headers=headers,
+                  json=task_data
+              )
+
+              if response.status_code == 201:
+                  print(f"✅ Deployment task created in Asana")
+              else:
+                  print(f"⚠️ Asana API returned {response.status_code}: {response.text}")
+          except Exception as e:
+              print(f"⚠️ Failed to update Asana: {e}")
+          SCRIPT
         env:
           ASANA_TOKEN: ${{ secrets.ASANA_TOKEN }}
+          ASANA_PROJECT_ID: ${{ secrets.ASANA_PROJECT_ID }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
 
   notify-success:
     name: ✅ Multi-Cloud Deploy Complete
     runs-on: ubuntu-latest
-    needs: [deploy-vercel, deploy-railway, deploy-digitalocean, update-notion, update-asana]
+    needs: [deploy-cloudflare, deploy-vercel, deploy-railway, deploy-digitalocean, deploy-pis, update-notion, update-asana]
     if: always()
     steps:
       - name: Summary
@@ -143,12 +319,14 @@ jobs:
           echo "🎉 Multi-Cloud Deployment Complete!"
           echo ""
           echo "Deployed to:"
-          echo "  ☁️  Cloudflare Pages"
-          echo "  ▲  Vercel"
-          echo "  🚂 Railway"
-          echo "  🌊 DigitalOcean"
-          echo "  🥧 Raspberry Pi Fleet"
+          echo "  ☁️  Cloudflare Workers: ${{ needs.deploy-cloudflare.outputs.status }}"
+          echo "  ▲  Vercel: ${{ needs.deploy-vercel.outputs.status }}"
+          echo "  🚂 Railway: ${{ needs.deploy-railway.outputs.status }}"
+          echo "  🌊 DigitalOcean: ${{ needs.deploy-digitalocean.outputs.status }}"
+          echo "  🥧 Raspberry Pi Fleet: ${{ needs.deploy-pis.outputs.status }}"
           echo ""
           echo "Updated:"
           echo "  📝 Notion documentation"
           echo "  📊 Asana project tasks"
+          echo ""
+          echo "Commit: ${{ github.sha }}"

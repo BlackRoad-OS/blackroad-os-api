@@ -1,9 +1,12 @@
 name = "blackroad-api"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
 
 [vars]
 ENVIRONMENT = "production"
+LOG_LEVEL = "info"
+CORS_ORIGIN = "*"
 
 # KV Namespaces for persistent storage
 [[kv_namespaces]]
@@ -38,7 +41,34 @@ id = "ac869d3a3ae54cd4a4956df1ef9564b0"
 binding = "DELEGATIONS"
 id = "a6a243568d7f461e8c88f8024611a3a1"
 
+[[kv_namespaces]]
+binding = "INTEGRATIONS"
+id = "integrations-kv-namespace-id"
+
+[[kv_namespaces]]
+binding = "MODELS"
+id = "models-kv-namespace-id"
+
 # Custom domain
 routes = [
   { pattern = "api.blackroad.io", custom_domain = true }
 ]
+
+# Cloudflare Tunnel configuration
+[triggers]
+crons = ["*/5 * * * *"]
+
+# Development settings
+[dev]
+port = 8787
+local_protocol = "http"
+
+# Environment-specific overrides
+[env.staging]
+vars = { ENVIRONMENT = "staging" }
+routes = [
+  { pattern = "staging-api.blackroad.io", custom_domain = true }
+]
+
+[env.development]
+vars = { ENVIRONMENT = "development" }
