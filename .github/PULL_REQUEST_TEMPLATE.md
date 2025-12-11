@@ -1,39 +1,24 @@
-## Summary
-<!-- What does this PR do? One paragraph max. -->
+# Pull Request
 
-## Changes
-<!-- Bulleted list of specific changes -->
--
+## Description
 
-## Type
-<!-- Check one -->
-- [ ] Feature
+## Type of Change
 - [ ] Bug fix
-- [ ] Infrastructure / CI
-- [ ] Documentation
-- [ ] Refactor
-- [ ] Config change
+- [ ] New feature
+- [ ] Breaking change
+- [ ] Documentation update
+- [ ] Infrastructure/DevOps change
 
-## Tests
-<!-- How was this tested? -->
-- [ ] Unit tests pass
-- [ ] Integration tests pass
-- [ ] Manual testing (describe below)
-- [ ] N/A (docs only)
-
-**Manual testing steps:**
-
-
-## Risk / Impact
-<!-- What could go wrong? What's the blast radius? -->
-- Risk level: Low / Medium / High
-- Affected services:
+## Testing
+- [ ] Tested locally
+- [ ] Health checks pass
+- [ ] Railway deployment succeeds
 
 ## Checklist
-- [ ] Code follows project conventions
-- [ ] No secrets or credentials committed
-- [ ] README updated (if applicable)
-- [ ] This is a single logical change (atomic PR)
+- [ ] Code follows project style
+- [ ] Self-reviewed code
+- [ ] Updated documentation
+- [ ] Tests pass
 
-## Related Issues
-<!-- Closes #123, Relates to #456 -->
+---
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
