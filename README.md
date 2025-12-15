@@ -2,6 +2,10 @@
 
 A minimal FastAPI 0.110 scaffold with Celery stubs for background work. Built to sit behind Operator & Prism layers.
 
+## Infrastructure
+
+This service is part of the BlackRoad OS infrastructure. See [INFRASTRUCTURE.md](./INFRASTRUCTURE.md) for the complete architecture, deployment, and operations guide.
+
 ## Quickstart
 
 ```bash
