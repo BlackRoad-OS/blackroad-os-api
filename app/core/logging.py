@@ -17,6 +17,7 @@ def configure_logging(level: str | int | None = None) -> None:
         level=resolved_level,
         format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
     )
+    logger.setLevel(resolved_level)
 
 
 logger = logging.getLogger(settings.app_name)
