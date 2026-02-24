@@ -9,7 +9,7 @@
     "start": "node --experimental-specifier-resolution=node dist/index.js"
   },
   "dependencies": {
-    "hono": "^4.0.0",
+    "hono": "^4.11.10",
     "nanoid": "^5.0.0"
   },
   "devDependencies": {
